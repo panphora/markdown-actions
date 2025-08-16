@@ -75,7 +75,7 @@ expandSelection(textarea, { toWord: true })
 applyCustomFormat(textarea, {
   prefix: '==',
   suffix: '==',
-  trimWhitespace: true
+  trimFirst: true
 })
 ```
 
@@ -188,7 +188,7 @@ textarea.addEventListener('keydown', (e) => {
 applyCustomFormat(textarea, {
   prefix: '==',
   suffix: '==',
-  trimWhitespace: true
+  trimFirst: true
 })
 
 // Spoiler format
