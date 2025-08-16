@@ -274,9 +274,6 @@
           <button class="toolbar-btn" id="italic-btn" title="Italic (Ctrl+I)">
             <em>I</em>
           </button>
-          <button class="toolbar-btn" id="strikethrough-btn" title="Strikethrough">
-            <s>S</s>
-          </button>
         </div>
         
         <div class="toolbar-group">
@@ -295,9 +292,6 @@
           <button class="toolbar-btn" id="link-btn" title="Link (Ctrl+K)">
             🔗
           </button>
-          <button class="toolbar-btn" id="image-btn" title="Image">
-            🖼️
-          </button>
           <button class="toolbar-btn" id="code-btn" title="Code">
             &lt;/&gt;
           </button>
@@ -309,9 +303,6 @@
           </button>
           <button class="toolbar-btn" id="number-btn" title="Numbered List">
             1.
-          </button>
-          <button class="toolbar-btn" id="task-btn" title="Task List">
-            ☑
           </button>
         </div>
         
@@ -469,9 +460,6 @@ The library handles:
       if (formats.includes('numbered-list')) {
         document.getElementById('number-btn').classList.add('active')
       }
-      if (formats.includes('task-list')) {
-        document.getElementById('task-btn').classList.add('active')
-      }
       if (formats.includes('quote')) {
         document.getElementById('quote-btn').classList.add('active')
       }
@@ -496,13 +484,6 @@ The library handles:
     
     document.getElementById('italic-btn').addEventListener('click', () => {
       md.toggleItalic(editor)
-      updateButtonStates()
-      updatePreview()
-      editor.focus()
-    })
-    
-    document.getElementById('strikethrough-btn').addEventListener('click', () => {
-      md.toggleStrikethrough(editor)
       updateButtonStates()
       updatePreview()
       editor.focus()
@@ -536,13 +517,6 @@ The library handles:
       editor.focus()
     })
     
-    document.getElementById('image-btn').addEventListener('click', () => {
-      md.insertImage(editor)
-      updateButtonStates()
-      updatePreview()
-      editor.focus()
-    })
-    
     document.getElementById('code-btn').addEventListener('click', () => {
       md.toggleCode(editor)
       updateButtonStates()
@@ -559,13 +533,6 @@ The library handles:
     
     document.getElementById('number-btn').addEventListener('click', () => {
       md.toggleNumberedList(editor)
-      updateButtonStates()
-      updatePreview()
-      editor.focus()
-    })
-    
-    document.getElementById('task-btn').addEventListener('click', () => {
-      md.toggleTaskList(editor)
       updateButtonStates()
       updatePreview()
       editor.focus()

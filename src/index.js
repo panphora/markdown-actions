@@ -31,16 +31,6 @@ export function toggleItalic(textarea) {
 }
 
 /**
- * Toggle strikethrough formatting
- */
-export function toggleStrikethrough(textarea) {
-  if (!textarea || textarea.disabled || textarea.readOnly) return
-  const style = mergeWithDefaults(FORMATS.strikethrough)
-  const result = blockStyle(textarea, style)
-  insertText(textarea, result)
-}
-
-/**
  * Toggle code formatting
  */
 export function toggleCode(textarea) {
@@ -94,32 +84,6 @@ export function insertLink(textarea, options = {}) {
 }
 
 /**
- * Insert image markdown
- */
-export function insertImage(textarea, options = {}) {
-  if (!textarea || textarea.disabled || textarea.readOnly) return
-  
-  let style = mergeWithDefaults(FORMATS.image)
-  
-  // Override with custom URL if provided
-  if (options.url) {
-    style.suffix = `](${options.url})`
-    style.replaceNext = ''
-  }
-  
-  // Handle alt text
-  if (options.alt) {
-    const pos = textarea.selectionStart
-    textarea.value = textarea.value.slice(0, pos) + options.alt + textarea.value.slice(pos)
-    textarea.selectionStart = pos
-    textarea.selectionEnd = pos + options.alt.length
-  }
-  
-  const result = blockStyle(textarea, style)
-  insertText(textarea, result)
-}
-
-/**
  * Toggle bullet list formatting
  */
 export function toggleBulletList(textarea) {
@@ -135,16 +99,6 @@ export function toggleNumberedList(textarea) {
   if (!textarea || textarea.disabled || textarea.readOnly) return
   const style = mergeWithDefaults(FORMATS.numberedList)
   applyListStyle(textarea, style)
-}
-
-/**
- * Toggle task list formatting
- */
-export function toggleTaskList(textarea) {
-  if (!textarea || textarea.disabled || textarea.readOnly) return
-  const style = mergeWithDefaults(FORMATS.taskList)
-  const result = multilineStyle(textarea, style)
-  insertText(textarea, result)
 }
 
 /**
@@ -260,13 +214,10 @@ export { setUndoMethod }
 export default {
   toggleBold,
   toggleItalic,
-  toggleStrikethrough,
   toggleCode,
   insertLink,
-  insertImage,
   toggleBulletList,
   toggleNumberedList,
-  toggleTaskList,
   toggleQuote,
   insertHeader,
   getActiveFormats,

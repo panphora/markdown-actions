@@ -13,11 +13,6 @@ export const FORMATS = {
     suffix: '_',
     trimFirst: true
   },
-  strikethrough: {
-    prefix: '~~',
-    suffix: '~~',
-    trimFirst: true
-  },
   code: {
     prefix: '`',
     suffix: '`',
@@ -26,12 +21,6 @@ export const FORMATS = {
   },
   link: {
     prefix: '[',
-    suffix: '](url)',
-    replaceNext: 'url',
-    scanFor: 'https?://'
-  },
-  image: {
-    prefix: '![',
     suffix: '](url)',
     replaceNext: 'url',
     scanFor: 'https?://'
@@ -45,11 +34,6 @@ export const FORMATS = {
     prefix: '1. ',
     multiline: true,
     orderedList: true
-  },
-  taskList: {
-    prefix: '- [ ] ',
-    multiline: true,
-    surroundWithNewlines: true
   },
   quote: {
     prefix: '> ',
