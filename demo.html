@@ -370,7 +370,9 @@ The library handles:
   </div>
 
   <script type="module">
-    import * as md from './src/index.js'
+    // Use built version if available, otherwise use source
+    import * as md from './dist/markdown-actions.esm.js'
+    // Alternative: import * as md from './src/index.js'
     
     const editor = document.getElementById('editor')
     const preview = document.getElementById('preview')

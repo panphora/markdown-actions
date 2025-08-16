@@ -1,0 +1,45 @@
+{
+  "name": "markdown-actions",
+  "version": "1.0.0",
+  "description": "A lightweight, zero-dependency JavaScript library for adding markdown formatting functionality to any textarea element",
+  "main": "dist/markdown-actions.js",
+  "module": "dist/markdown-actions.esm.js",
+  "type": "module",
+  "scripts": {
+    "build": "node esbuild.config.js",
+    "watch": "node esbuild.config.js --watch",
+    "serve": "http-server -p 3000 -c-1",
+    "dev": "concurrently \"npm run watch\" \"npm run serve\"",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/panphora/markdown-actions.git"
+  },
+  "keywords": [
+    "markdown",
+    "editor",
+    "textarea",
+    "formatting",
+    "toolbar",
+    "wysiwyg",
+    "lightweight"
+  ],
+  "author": "",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/panphora/markdown-actions/issues"
+  },
+  "homepage": "https://github.com/panphora/markdown-actions#readme",
+  "devDependencies": {
+    "concurrently": "^8.2.2",
+    "esbuild": "^0.19.11",
+    "http-server": "^14.1.1"
+  },
+  "files": [
+    "dist",
+    "src",
+    "README.md",
+    "LICENSE"
+  ]
+}

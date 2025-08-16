@@ -5,7 +5,7 @@
 
 import { FORMATS, mergeWithDefaults } from './core/formats.js'
 import { insertText, setUndoMethod } from './core/insertion.js'
-import { preserveSelection, expandSelection as expandSelectionUtil, isMultipleLines } from './core/selection.js'
+import { preserveSelection, isMultipleLines } from './core/selection.js'
 import { blockStyle, multilineStyle } from './operations/block.js'
 import { applyListStyle } from './operations/list.js'
 import { getActiveFormats as getActive, hasFormat as has, expandSelection as expand } from './core/detection.js'

@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Markdown Actions - UMD Example</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      max-width: 800px;
+      margin: 40px auto;
+      padding: 20px;
+    }
+    
+    .toolbar {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 10px;
+      padding: 10px;
+      background: #f5f5f5;
+      border-radius: 4px;
+    }
+    
+    button {
+      padding: 8px 15px;
+      border: 1px solid #ccc;
+      background: white;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    
+    button:hover {
+      background: #f0f0f0;
+    }
+    
+    button.active {
+      background: #007bff;
+      color: white;
+      border-color: #007bff;
+    }
+    
+    textarea {
+      width: 100%;
+      min-height: 300px;
+      padding: 12px;
+      font-family: monospace;
+      font-size: 14px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+    
+    h1 {
+      color: #333;
+    }
+    
+    .info {
+      background: #e3f2fd;
+      padding: 15px;
+      border-radius: 4px;
+      margin-bottom: 20px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Markdown Actions - UMD Build Example</h1>
+  
+  <div class="info">
+    <p>This example demonstrates using the UMD build with a simple &lt;script&gt; tag.</p>
+    <p>The library is available globally as <code>markdownActions</code>.</p>
+  </div>
+  
+  <div class="toolbar">
+    <button id="bold">Bold</button>
+    <button id="italic">Italic</button>
+    <button id="code">Code</button>
+    <button id="link">Link</button>
+    <button id="list">List</button>
+    <button id="quote">Quote</button>
+  </div>
+  
+  <textarea id="editor" placeholder="Type some text and use the toolbar buttons..."></textarea>
+  
+  <!-- Load the UMD build -->
+  <script src="./dist/markdown-actions.min.js"></script>
+  
+  <script>
+    // The library is available globally as markdownActions
+    const { 
+      toggleBold, 
+      toggleItalic, 
+      toggleCode, 
+      insertLink, 
+      toggleBulletList, 
+      toggleQuote,
+      getActiveFormats 
+    } = markdownActions;
+    
+    const editor = document.getElementById('editor');
+    
+    // Update button states
+    function updateButtons() {
+      const formats = getActiveFormats(editor);
+      document.querySelectorAll('button').forEach(btn => {
+        btn.classList.remove('active');
+      });
+      
+      if (formats.includes('bold')) {
+        document.getElementById('bold').classList.add('active');
+      }
+      if (formats.includes('italic')) {
+        document.getElementById('italic').classList.add('active');
+      }
+      if (formats.includes('code')) {
+        document.getElementById('code').classList.add('active');
+      }
+    }
+    
+    // Button click handlers
+    document.getElementById('bold').addEventListener('click', () => {
+      toggleBold(editor);
+      updateButtons();
+      editor.focus();
+    });
+    
+    document.getElementById('italic').addEventListener('click', () => {
+      toggleItalic(editor);
+      updateButtons();
+      editor.focus();
+    });
+    
+    document.getElementById('code').addEventListener('click', () => {
+      toggleCode(editor);
+      updateButtons();
+      editor.focus();
+    });
+    
+    document.getElementById('link').addEventListener('click', () => {
+      insertLink(editor);
+      updateButtons();
+      editor.focus();
+    });
+    
+    document.getElementById('list').addEventListener('click', () => {
+      toggleBulletList(editor);
+      updateButtons();
+      editor.focus();
+    });
+    
+    document.getElementById('quote').addEventListener('click', () => {
+      toggleQuote(editor);
+      updateButtons();
+      editor.focus();
+    });
+    
+    // Update buttons on selection change
+    editor.addEventListener('keyup', updateButtons);
+    editor.addEventListener('mouseup', updateButtons);
+    
+    // Add some sample text
+    editor.value = 'Select this text and click the toolbar buttons to format it!\n\nThe UMD build works great for simple script tag usage.';
+  </script>
+</body>
+</html>
