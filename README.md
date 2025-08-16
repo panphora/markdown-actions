@@ -51,14 +51,11 @@ All functions take a `HTMLTextAreaElement` as their first parameter:
 ```javascript
 toggleBold(textarea)           // **text**
 toggleItalic(textarea)         // _text_
-toggleStrikethrough(textarea)  // ~~text~~
 toggleCode(textarea)           // `code` or ```block```
 toggleQuote(textarea)          // > quote
 toggleBulletList(textarea)     // - item
 toggleNumberedList(textarea)   // 1. item
-toggleTaskList(textarea)       // - [ ] task
 insertLink(textarea, options)  // [text](url)
-insertImage(textarea, options) // ![alt](url)
 insertHeader(textarea, level)  // # Header
 ```
 
@@ -89,12 +86,6 @@ applyCustomFormat(textarea, {
 insertLink(textarea, {
   url: 'https://example.com',  // Pre-fill URL
   text: 'Link text'             // Pre-fill text
-})
-
-// Image options
-insertImage(textarea, {
-  url: 'image.jpg',             // Image URL
-  alt: 'Description'            // Alt text
 })
 ```
 
