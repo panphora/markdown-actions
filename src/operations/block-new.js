@@ -69,7 +69,7 @@ export function blockStyle(textarea, arg) {
     return { text: replacementText, selectionStart, selectionEnd }
   } else if (scanFor.length > 0 && selectedText.match(scanFor)) {
     suffixToUse = suffixToUse.replace(replaceNext, selectedText)
-    const replacementText = prefixToUse + suffixToUse
+    const replacementText = prefixToUse + selectedText + suffixToUse
     selectionStart = selectionEnd = selectionStart + prefixToUse.length
     return { text: replacementText, selectionStart, selectionEnd }
   } else {
