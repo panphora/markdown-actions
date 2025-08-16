@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>List Toggle Test</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      max-width: 800px;
+      margin: 40px auto;
+      padding: 20px;
+    }
+    
+    .test-area {
+      margin: 20px 0;
+      padding: 20px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+    }
+    
+    h2 {
+      color: #333;
+      margin-top: 0;
+    }
+    
+    textarea {
+      width: 100%;
+      min-height: 150px;
+      padding: 10px;
+      font-family: monospace;
+      font-size: 14px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      margin: 10px 0;
+    }
+    
+    button {
+      padding: 8px 16px;
+      margin: 5px;
+      border: 1px solid #007bff;
+      background: #007bff;
+      color: white;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    
+    button:hover {
+      background: #0056b3;
+    }
+    
+    .output {
+      background: #f8f9fa;
+      padding: 10px;
+      border-radius: 4px;
+      font-family: monospace;
+      white-space: pre-wrap;
+      margin-top: 10px;
+    }
+    
+    .instructions {
+      background: #e3f2fd;
+      padding: 15px;
+      border-radius: 4px;
+      margin-bottom: 20px;
+    }
+  </style>
+</head>
+<body>
+  <h1>List Toggle Test</h1>
+  
+  <div class="instructions">
+    <h3>Test Instructions:</h3>
+    <ol>
+      <li>Type or paste text in the textarea</li>
+      <li>Select the text you want to format</li>
+      <li>Click "Toggle Bullet List" to add/remove bullet formatting</li>
+      <li>Check if the text is properly formatted without duplication</li>
+    </ol>
+    <p><strong>Known Issue:</strong> Previously resulted in "Format togglFormat togglinging" when toggling off</p>
+  </div>
+
+  <div class="test-area">
+    <h2>Test 1: Single Line Toggle</h2>
+    <textarea id="test1">Format toggling</textarea>
+    <div>
+      <button onclick="toggleBullet('test1')">Toggle Bullet List</button>
+      <button onclick="toggleNumbered('test1')">Toggle Numbered List</button>
+      <button onclick="clearText('test1')">Clear</button>
+    </div>
+    <div class="output" id="output1"></div>
+  </div>
+
+  <div class="test-area">
+    <h2>Test 2: Multi-line Toggle</h2>
+    <textarea id="test2">First line
+Second line
+Third line</textarea>
+    <div>
+      <button onclick="toggleBullet('test2')">Toggle Bullet List</button>
+      <button onclick="toggleNumbered('test2')">Toggle Numbered List</button>
+      <button onclick="clearText('test2')">Clear</button>
+    </div>
+    <div class="output" id="output2"></div>
+  </div>
+
+  <div class="test-area">
+    <h2>Test 3: Already Formatted List</h2>
+    <textarea id="test3">- Already a bullet
+- Another bullet item
+- Third item</textarea>
+    <div>
+      <button onclick="toggleBullet('test3')">Toggle Bullet List</button>
+      <button onclick="toggleNumbered('test3')">Toggle Numbered List</button>
+      <button onclick="clearText('test3')">Clear</button>
+    </div>
+    <div class="output" id="output3"></div>
+  </div>
+
+  <div class="test-area">
+    <h2>Test 4: Mixed Content</h2>
+    <textarea id="test4">Regular text
+- Bullet item
+More regular text
+1. Numbered item</textarea>
+    <div>
+      <button onclick="toggleBullet('test4')">Toggle Bullet List</button>
+      <button onclick="toggleNumbered('test4')">Toggle Numbered List</button>
+      <button onclick="selectAll('test4')">Select All</button>
+      <button onclick="clearText('test4')">Clear</button>
+    </div>
+    <div class="output" id="output4"></div>
+  </div>
+
+  <script type="module">
+    import * as md from './dist/markdown-actions.esm.js'
+    
+    // Make functions available globally
+    window.toggleBullet = function(id) {
+      const textarea = document.getElementById(id)
+      const outputId = id.replace('test', 'output')
+      
+      console.log('Before:', {
+        value: textarea.value,
+        selectionStart: textarea.selectionStart,
+        selectionEnd: textarea.selectionEnd,
+        selectedText: textarea.value.slice(textarea.selectionStart, textarea.selectionEnd)
+      })
+      
+      md.toggleBulletList(textarea)
+      
+      console.log('After:', {
+        value: textarea.value,
+        selectionStart: textarea.selectionStart,
+        selectionEnd: textarea.selectionEnd
+      })
+      
+      document.getElementById(outputId).textContent = 
+        `Result:\n${textarea.value}\n\nCursor: ${textarea.selectionStart}-${textarea.selectionEnd}`
+      
+      textarea.focus()
+    }
+    
+    window.toggleNumbered = function(id) {
+      const textarea = document.getElementById(id)
+      const outputId = id.replace('test', 'output')
+      
+      md.toggleNumberedList(textarea)
+      
+      document.getElementById(outputId).textContent = 
+        `Result:\n${textarea.value}\n\nCursor: ${textarea.selectionStart}-${textarea.selectionEnd}`
+      
+      textarea.focus()
+    }
+    
+    window.clearText = function(id) {
+      const textarea = document.getElementById(id)
+      textarea.value = ''
+      const outputId = id.replace('test', 'output')
+      document.getElementById(outputId).textContent = ''
+    }
+    
+    window.selectAll = function(id) {
+      const textarea = document.getElementById(id)
+      textarea.select()
+    }
+    
+    // Log that we're ready
+    console.log('List toggle test ready!')
+    console.log('Available functions:', Object.keys(md))
+  </script>
+</body>
+</html>

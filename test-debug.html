@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Debug List Operations</title>
+  <style>
+    body {
+      font-family: monospace;
+      max-width: 1200px;
+      margin: 20px auto;
+      padding: 20px;
+    }
+    textarea {
+      width: 100%;
+      height: 100px;
+      font-family: monospace;
+    }
+    .log {
+      background: #f0f0f0;
+      padding: 10px;
+      margin: 10px 0;
+      white-space: pre-wrap;
+      max-height: 400px;
+      overflow-y: auto;
+    }
+    button {
+      padding: 10px 20px;
+      margin: 5px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Debug List Operations</h1>
+  
+  <textarea id="test">Format toggling</textarea>
+  
+  <div>
+    <button onclick="testBulletList()">Test Bullet List</button>
+    <button onclick="clearLog()">Clear Log</button>
+  </div>
+  
+  <h2>Debug Log:</h2>
+  <div class="log" id="log"></div>
+
+  <script type="module">
+    import * as md from './dist/markdown-actions.esm.js'
+    
+    const logDiv = document.getElementById('log')
+    
+    function log(message) {
+      logDiv.textContent += message + '\n'
+      console.log(message)
+    }
+    
+    window.clearLog = function() {
+      logDiv.textContent = ''
+    }
+    
+    window.testBulletList = function() {
+      const textarea = document.getElementById('test')
+      
+      log('=== BEFORE TOGGLE ===')
+      log(`Value: "${textarea.value}"`)
+      log(`Selection: ${textarea.selectionStart}-${textarea.selectionEnd}`)
+      log(`Selected text: "${textarea.value.slice(textarea.selectionStart, textarea.selectionEnd)}"`)
+      
+      // Monkey-patch insertText to see what it receives
+      const originalInsertText = md.insertText
+      if (originalInsertText) {
+        log('ERROR: Cannot access insertText directly')
+      }
+      
+      // Manually trace through what should happen
+      log('\n=== MANUAL TRACE ===')
+      
+      // Save original state
+      const originalValue = textarea.value
+      const originalStart = textarea.selectionStart
+      const originalEnd = textarea.selectionEnd
+      
+      // This is what expandSelectionToLine should do
+      const lines = textarea.value.split('\n')
+      let counter = 0
+      for (let index = 0; index < lines.length; index++) {
+        const lineLength = lines[index].length + 1
+        if (textarea.selectionStart >= counter && textarea.selectionStart < counter + lineLength) {
+          textarea.selectionStart = counter
+        }
+        if (textarea.selectionEnd >= counter && textarea.selectionEnd < counter + lineLength) {
+          textarea.selectionEnd = counter + lineLength - 1
+        }
+        counter += lineLength
+      }
+      
+      log(`After expandSelectionToLine:`)
+      log(`Selection: ${textarea.selectionStart}-${textarea.selectionEnd}`)
+      log(`Selected text: "${textarea.value.slice(textarea.selectionStart, textarea.selectionEnd)}"`)
+      
+      // Reset for actual operation
+      textarea.value = originalValue
+      textarea.selectionStart = originalStart
+      textarea.selectionEnd = originalEnd
+      
+      log('\n=== ACTUAL TOGGLE ===')
+      
+      try {
+        md.toggleBulletList(textarea)
+      } catch (e) {
+        log(`ERROR: ${e.message}`)
+      }
+      
+      log('\n=== AFTER TOGGLE ===')
+      log(`Value: "${textarea.value}"`)
+      log(`Selection: ${textarea.selectionStart}-${textarea.selectionEnd}`)
+    }
+    
+    // Auto-run test
+    window.testBulletList()
+  </script>
+</body>
+</html>

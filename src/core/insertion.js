@@ -17,8 +17,10 @@ export function insertText(textarea, { text, selectionStart, selectionEnd }) {
   const originalSelectionStart = textarea.selectionStart
   const before = textarea.value.slice(0, originalSelectionStart)
   const after = textarea.value.slice(textarea.selectionEnd)
+  
+  // Store the original value to check if execCommand actually changed it
+  const originalValue = textarea.value
 
-  // Try to use execCommand for native undo/redo support
   if (canInsertText === null || canInsertText === true) {
     textarea.contentEditable = 'true'
     try {
@@ -29,36 +31,33 @@ export function insertText(textarea, { text, selectionStart, selectionEnd }) {
     textarea.contentEditable = 'false'
   }
 
-  // Verify that execCommand actually worked
   if (canInsertText && !textarea.value.slice(0, textarea.selectionStart).endsWith(text)) {
     canInsertText = false
   }
 
-  // Fallback to manual insertion
   if (!canInsertText) {
-    try {
-      document.execCommand('ms-beginUndoUnit')
-    } catch (e) {
-      // Ignore - this is for IE/Edge support
+    // Only do manual insertion if execCommand didn't change the value
+    if (textarea.value === originalValue) {
+      try {
+        document.execCommand('ms-beginUndoUnit')
+      } catch (e) {
+        // Do nothing.
+      }
+      textarea.value = before + text + after
+      try {
+        document.execCommand('ms-endUndoUnit')
+      } catch (e) {
+        // Do nothing.
+      }
+      textarea.dispatchEvent(new CustomEvent('input', { bubbles: true, cancelable: true }))
     }
-    textarea.value = before + text + after
-    try {
-      document.execCommand('ms-endUndoUnit')
-    } catch (e) {
-      // Ignore - this is for IE/Edge support
-    }
-    textarea.dispatchEvent(new CustomEvent('input', { bubbles: true, cancelable: true }))
   }
 
-  // Set selection
   if (selectionStart != null && selectionEnd != null) {
     textarea.setSelectionRange(selectionStart, selectionEnd)
   } else {
     textarea.setSelectionRange(originalSelectionStart, textarea.selectionEnd)
   }
-  
-  // Trigger change event for frameworks
-  textarea.dispatchEvent(new Event('change', { bubbles: true }))
 }
 
 /**

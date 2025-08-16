@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Test expandSelectionToLine</title>
+</head>
+<body>
+  <h1>Test expandSelectionToLine</h1>
+  <textarea id="test">Format toggling</textarea>
+  
+  <script type="module">
+    // Inline version of expandSelectionToLine for testing
+    function expandSelectionToLine(textarea) {
+      const lines = textarea.value.split('\n')
+      let counter = 0
+      console.log('Lines:', lines)
+      console.log('Initial selection:', textarea.selectionStart, '-', textarea.selectionEnd)
+      
+      for (let index = 0; index < lines.length; index++) {
+        const lineLength = lines[index].length + 1
+        console.log(`Line ${index}: "${lines[index]}", counter=${counter}, lineLength=${lineLength}`)
+        
+        if (textarea.selectionStart >= counter && textarea.selectionStart < counter + lineLength) {
+          console.log(`  Setting selectionStart to ${counter}`)
+          textarea.selectionStart = counter
+        }
+        if (textarea.selectionEnd >= counter && textarea.selectionEnd < counter + lineLength) {
+          const newEnd = counter + lineLength - 1
+          console.log(`  Setting selectionEnd to ${newEnd}`)
+          textarea.selectionEnd = newEnd
+        }
+        counter += lineLength
+      }
+      
+      console.log('Final selection:', textarea.selectionStart, '-', textarea.selectionEnd)
+      console.log('Selected text:', textarea.value.slice(textarea.selectionStart, textarea.selectionEnd))
+    }
+    
+    const textarea = document.getElementById('test')
+    
+    // Test 1: Cursor at position 0
+    console.log('\n=== Test 1: Cursor at start ===')
+    textarea.selectionStart = 0
+    textarea.selectionEnd = 0
+    expandSelectionToLine(textarea)
+    
+    // Reset
+    textarea.value = 'Format toggling'
+    
+    // Test 2: Cursor in middle
+    console.log('\n=== Test 2: Cursor in middle ===')
+    textarea.selectionStart = 7
+    textarea.selectionEnd = 7
+    expandSelectionToLine(textarea)
+    
+    // Reset
+    textarea.value = 'Format toggling'
+    
+    // Test 3: Text selected
+    console.log('\n=== Test 3: Text selected ===')
+    textarea.selectionStart = 0
+    textarea.selectionEnd = 6
+    expandSelectionToLine(textarea)
+    
+    // For single line, the final selection should be 0 to 15 (length of "Format toggling")
+    // But we're setting it to counter + lineLength - 1
+    // For a single line: counter = 0, lineLength = 15 + 1 = 16
+    // So selectionEnd = 0 + 16 - 1 = 15
+    // That's correct!
+    
+    // Test with actual list operation
+    console.log('\n=== Test with list prefix ===')
+    textarea.value = '- Format toggling'
+    textarea.selectionStart = 2 // After "- "
+    textarea.selectionEnd = 2
+    expandSelectionToLine(textarea)
+    
+    // Should select the whole line: 0 to 17
+  </script>
+</body>
+</html>

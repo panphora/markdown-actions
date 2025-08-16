@@ -44,7 +44,12 @@ export function expandSelectionToLine(textarea) {
       textarea.selectionStart = counter
     }
     if (textarea.selectionEnd >= counter && textarea.selectionEnd < counter + lineLength) {
-      textarea.selectionEnd = counter + lineLength - 1
+      // For the last line, don't go past the actual text length
+      if (index === lines.length - 1) {
+        textarea.selectionEnd = Math.min(counter + lines[index].length, textarea.value.length)
+      } else {
+        textarea.selectionEnd = counter + lineLength - 1
+      }
     }
     counter += lineLength
   }

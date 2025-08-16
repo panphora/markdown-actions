@@ -10,44 +10,29 @@ import { insertText } from '../core/insertion.js'
  * Apply block-level styling to selected text
  */
 export function blockStyle(textarea, style) {
-  const {
-    prefix,
-    suffix,
-    blockPrefix,
-    blockSuffix,
-    replaceNext,
-    prefixSpace,
-    scanFor,
-    surroundWithNewlines,
-    trimFirst
-  } = style
+  let newlinesToAppend
+  let newlinesToPrepend
 
+  const { prefix, suffix, blockPrefix, blockSuffix, replaceNext, prefixSpace, scanFor, surroundWithNewlines, trimFirst } = style
   const originalSelectionStart = textarea.selectionStart
   const originalSelectionEnd = textarea.selectionEnd
 
   let selectedText = textarea.value.slice(textarea.selectionStart, textarea.selectionEnd)
-  let prefixToUse = isMultipleLines(selectedText) && blockPrefix.length > 0 ? `${blockPrefix}\n` : prefix
-  let suffixToUse = isMultipleLines(selectedText) && blockSuffix.length > 0 ? `\n${blockSuffix}` : suffix
+  let prefixToUse = isMultipleLines(selectedText) && blockPrefix && blockPrefix.length > 0 ? `${blockPrefix}\n` : prefix
+  let suffixToUse = isMultipleLines(selectedText) && blockSuffix && blockSuffix.length > 0 ? `\n${blockSuffix}` : suffix
 
-  // Add space before prefix if needed
   if (prefixSpace) {
     const beforeSelection = textarea.value[textarea.selectionStart - 1]
     if (textarea.selectionStart !== 0 && beforeSelection != null && !beforeSelection.match(/\s/)) {
       prefixToUse = ` ${prefixToUse}`
     }
   }
-
-  // Expand selection to word boundaries or existing format markers
+  
   selectedText = expandSelectedText(textarea, prefixToUse, suffixToUse, style.multiline)
   let selectionStart = textarea.selectionStart
   let selectionEnd = textarea.selectionEnd
-
-  // Check if we need to handle replaceNext pattern (for links/images)
-  const hasReplaceNext = replaceNext.length > 0 && suffixToUse.indexOf(replaceNext) > -1 && selectedText.length > 0
-
-  // Add newlines if needed for block-level elements
-  let newlinesToAppend = ''
-  let newlinesToPrepend = ''
+  const hasReplaceNext = replaceNext && replaceNext.length > 0 && suffixToUse.indexOf(replaceNext) > -1 && selectedText.length > 0
+  
   if (surroundWithNewlines) {
     const ref = newlinesToSurroundSelectedText(textarea)
     newlinesToAppend = ref.newlinesToAppend
@@ -56,7 +41,7 @@ export function blockStyle(textarea, style) {
     suffixToUse += newlinesToPrepend
   }
 
-  // Check if format is already applied (toggle off)
+  // Check if we should remove formatting (toggle off)
   if (selectedText.startsWith(prefixToUse) && selectedText.endsWith(suffixToUse)) {
     const replacementText = selectedText.slice(prefixToUse.length, selectedText.length - suffixToUse.length)
     if (originalSelectionStart === originalSelectionEnd) {
@@ -68,29 +53,11 @@ export function blockStyle(textarea, style) {
       selectionEnd = selectionStart + replacementText.length
     }
     return { text: replacementText, selectionStart, selectionEnd }
-  } 
-  // Apply format - handle replaceNext pattern (links/images)
-  else if (hasReplaceNext) {
-    // Check if selected text is a URL
-    if (scanFor.length > 0 && selectedText.match(scanFor)) {
-      suffixToUse = suffixToUse.replace(replaceNext, selectedText)
-      const replacementText = prefixToUse + suffixToUse
-      selectionStart = selectionEnd = selectionStart + prefixToUse.length
-      return { text: replacementText, selectionStart, selectionEnd }
-    } else {
-      const replacementText = prefixToUse + selectedText + suffixToUse
-      selectionStart = selectionStart + prefixToUse.length + selectedText.length + suffixToUse.indexOf(replaceNext)
-      selectionEnd = selectionStart + replaceNext.length
-      return { text: replacementText, selectionStart, selectionEnd }
-    }
-  }
-  // Apply normal format
-  else {
+  } else if (!hasReplaceNext) {
+    // Add formatting
     let replacementText = prefixToUse + selectedText + suffixToUse
     selectionStart = originalSelectionStart + prefixToUse.length
     selectionEnd = originalSelectionEnd + prefixToUse.length
-
-    // Handle trimFirst option (for inline formats)
     const whitespaceEdges = selectedText.match(/^\s*|\s*$/g)
     if (trimFirst && whitespaceEdges) {
       const leadingWhitespace = whitespaceEdges[0] || ''
@@ -99,7 +66,18 @@ export function blockStyle(textarea, style) {
       selectionStart += leadingWhitespace.length
       selectionEnd -= trailingWhitespace.length
     }
-
+    return { text: replacementText, selectionStart, selectionEnd }
+  } else if (scanFor && scanFor.length > 0 && selectedText.match(scanFor)) {
+    // Handle link/image with URL detection
+    suffixToUse = suffixToUse.replace(replaceNext, selectedText)
+    const replacementText = prefixToUse + suffixToUse
+    selectionStart = selectionEnd = selectionStart + prefixToUse.length
+    return { text: replacementText, selectionStart, selectionEnd }
+  } else {
+    // Handle link/image with placeholder
+    const replacementText = prefixToUse + selectedText + suffixToUse
+    selectionStart = selectionStart + prefixToUse.length + selectedText.length + suffixToUse.indexOf(replaceNext)
+    selectionEnd = selectionStart + replaceNext.length
     return { text: replacementText, selectionStart, selectionEnd }
   }
 }

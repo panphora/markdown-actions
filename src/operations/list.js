@@ -139,6 +139,14 @@ export function listStyle(textarea, style) {
  * Apply list style to textarea
  */
 export function applyListStyle(textarea, style) {
+  // Save the original selection boundaries before expansion
+  const originalStart = textarea.selectionStart
+  const originalEnd = textarea.selectionEnd
+  
+  // Get the result which includes expandSelectionToLine
   const result = listStyle(textarea, style)
+  
+  // At this point, textarea selection has been expanded to full line(s)
+  // insertText will use the current (expanded) selection to know what to replace
   insertText(textarea, result)
 }
