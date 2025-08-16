@@ -221,9 +221,80 @@ This approach avoids the pitfalls of tokenization:
 - No state management complexity
 - No parsing edge cases
 
+### 🎯 Selection Preservation - How Text Stays Selected
+
+One of the most polished features of `markdown-actions` is how it preserves text selection after formatting. When you click "Bold" in a toolbar, the text stays selected, allowing for immediate additional formatting. Here's the step-by-step process:
+
+#### Step 1: Capture Original Selection
+```javascript
+// In blockStyle() - src/operations/block.js:17-18
+const originalSelectionStart = textarea.selectionStart
+const originalSelectionEnd = textarea.selectionEnd
+```
+
+#### Step 2: Calculate New Selection After Formatting
+When adding formatting (e.g., `**text**`):
+```javascript
+// src/operations/block.js:58-60
+let replacementText = prefixToUse + selectedText + suffixToUse
+selectionStart = originalSelectionStart + prefixToUse.length
+selectionEnd = originalSelectionEnd + prefixToUse.length
+```
+
+When removing formatting (toggle off):
+```javascript
+// src/operations/block.js:46-54
+const replacementText = selectedText.slice(prefixToUse.length, -suffixToUse.length)
+if (originalSelectionStart === originalSelectionEnd) {
+  // Cursor position (no selection)
+  let position = originalSelectionStart - prefixToUse.length
+  selectionStart = selectionEnd = position
+} else {
+  // Keep selection on unformatted text
+  selectionEnd = selectionStart + replacementText.length
+}
+```
+
+#### Step 3: Apply Text Change with Native Undo Support
+```javascript
+// In insertText() - src/core/insertion.js:24-31
+textarea.contentEditable = 'true'
+try {
+  // Try native method first (preserves undo/redo)
+  canInsertText = document.execCommand('insertText', false, text)
+} catch (error) {
+  canInsertText = false
+}
+textarea.contentEditable = 'false'
+```
+
+#### Step 4: Restore Selection at Calculated Position
+```javascript
+// src/core/insertion.js:56-60
+if (selectionStart != null && selectionEnd != null) {
+  textarea.setSelectionRange(selectionStart, selectionEnd)
+} else {
+  textarea.setSelectionRange(originalSelectionStart, textarea.selectionEnd)
+}
+```
+
+#### Why This Matters
+This careful selection management creates a professional editing experience:
+- **Multiple formats**: Apply bold, then immediately italic without reselecting
+- **Visual feedback**: See exactly what text is affected
+- **Keyboard friendly**: Selection persists for keyboard shortcuts
+- **Undo/redo aware**: Selection state is part of the undo stack
+
+#### Example Flow
+1. User selects "hello world"
+2. User clicks Bold button
+3. Text becomes "**hello world**"
+4. "hello world" remains selected (without the ** markers)
+5. User can immediately click Italic to get "**_hello world_**"
+
 ## 🧪 Testing
 
-Open `test.html` in a browser to run the comprehensive test suite with 70+ test cases covering:
+Open `test.html` in a browser to run the comprehensive test suite with 38 test cases covering:
 
 - All formatting functions
 - Edge cases and boundary conditions
