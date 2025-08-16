@@ -1,0 +1,800 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Markdown Actions - Test Suite</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+    
+    h1 {
+      color: #333;
+      border-bottom: 2px solid #0366d6;
+      padding-bottom: 10px;
+    }
+    
+    #test-results {
+      background: white;
+      border-radius: 8px;
+      padding: 20px;
+      margin: 20px 0;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    .test-suite {
+      margin: 20px 0;
+    }
+    
+    .suite-title {
+      font-size: 18px;
+      font-weight: bold;
+      margin: 15px 0 10px 0;
+      padding: 10px;
+      background: #f6f8fa;
+      border-left: 4px solid #0366d6;
+    }
+    
+    .test-case {
+      padding: 8px 15px;
+      margin: 5px 0;
+      border-left: 3px solid #ddd;
+      background: white;
+      transition: all 0.2s;
+    }
+    
+    .test-case.pass {
+      border-left-color: #28a745;
+      background: #f0fff4;
+    }
+    
+    .test-case.fail {
+      border-left-color: #dc3545;
+      background: #fff5f5;
+    }
+    
+    .test-case .name {
+      font-weight: 500;
+    }
+    
+    .test-case .status {
+      float: right;
+      font-weight: bold;
+    }
+    
+    .test-case.pass .status {
+      color: #28a745;
+    }
+    
+    .test-case.fail .status {
+      color: #dc3545;
+    }
+    
+    .error-message {
+      color: #dc3545;
+      margin-top: 5px;
+      padding: 5px;
+      background: #fee;
+      border-radius: 3px;
+      font-size: 13px;
+      font-family: monospace;
+    }
+    
+    #summary {
+      padding: 15px;
+      background: #f6f8fa;
+      border-radius: 5px;
+      margin-bottom: 20px;
+      font-size: 16px;
+    }
+    
+    #summary.all-pass {
+      background: #d4edda;
+      color: #155724;
+    }
+    
+    #summary.has-fail {
+      background: #f8d7da;
+      color: #721c24;
+    }
+    
+    #test-textarea {
+      position: absolute;
+      left: -9999px;
+    }
+    
+    .controls {
+      margin: 20px 0;
+    }
+    
+    button {
+      padding: 10px 20px;
+      font-size: 16px;
+      background: #0366d6;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    
+    button:hover {
+      background: #0256c7;
+    }
+    
+    .stats {
+      display: flex;
+      gap: 20px;
+      margin-top: 10px;
+    }
+    
+    .stat {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+    
+    .stat-value {
+      font-weight: bold;
+      font-size: 20px;
+    }
+    
+    .pass-count {
+      color: #28a745;
+    }
+    
+    .fail-count {
+      color: #dc3545;
+    }
+    
+    .total-count {
+      color: #6c757d;
+    }
+  </style>
+</head>
+<body>
+  <h1>🧪 Markdown Actions Test Suite</h1>
+  
+  <div class="controls">
+    <button onclick="runAllTests()">Run All Tests</button>
+  </div>
+  
+  <div id="summary"></div>
+  <div id="test-results"></div>
+  
+  <!-- Hidden textarea for testing -->
+  <textarea id="test-textarea"></textarea>
+
+  <script type="module">
+    import * as md from './src/index.js'
+    
+    // Make functions globally available for tests
+    window.md = md
+    window.runAllTests = runAllTests
+    
+    // Test utilities
+    class TestRunner {
+      constructor() {
+        this.tests = []
+        this.results = []
+        this.textarea = document.getElementById('test-textarea')
+      }
+      
+      suite(name, fn) {
+        this.currentSuite = name
+        fn()
+      }
+      
+      test(name, fn) {
+        this.tests.push({
+          suite: this.currentSuite,
+          name,
+          fn
+        })
+      }
+      
+      setUp() {
+        // Reset textarea before each test
+        this.textarea.value = ''
+        this.textarea.selectionStart = 0
+        this.textarea.selectionEnd = 0
+      }
+      
+      async run() {
+        this.results = []
+        
+        for (const test of this.tests) {
+          this.setUp()
+          
+          try {
+            await test.fn(this.textarea)
+            this.results.push({
+              suite: test.suite,
+              name: test.name,
+              status: 'pass'
+            })
+          } catch (error) {
+            this.results.push({
+              suite: test.suite,
+              name: test.name,
+              status: 'fail',
+              error: error.message
+            })
+          }
+        }
+        
+        return this.results
+      }
+      
+      assert(condition, message) {
+        if (!condition) {
+          throw new Error(message || 'Assertion failed')
+        }
+      }
+      
+      assertEqual(actual, expected, message) {
+        if (actual !== expected) {
+          throw new Error(message || `Expected "${expected}" but got "${actual}"`)
+        }
+      }
+      
+      assertSelection(textarea, start, end) {
+        if (textarea.selectionStart !== start || textarea.selectionEnd !== end) {
+          throw new Error(`Expected selection [${start}, ${end}] but got [${textarea.selectionStart}, ${textarea.selectionEnd}]`)
+        }
+      }
+    }
+    
+    const runner = new TestRunner()
+    
+    // ============= BOLD TESTS =============
+    runner.suite('Bold Formatting', () => {
+      runner.test('Should wrap selected text in bold markers', (textarea) => {
+        textarea.value = 'Hello world'
+        textarea.selectionStart = 6
+        textarea.selectionEnd = 11
+        
+        md.toggleBold(textarea)
+        
+        runner.assertEqual(textarea.value, 'Hello **world**')
+      })
+      
+      runner.test('Should remove bold markers when toggling off', (textarea) => {
+        textarea.value = 'Hello **world**'
+        textarea.selectionStart = 8
+        textarea.selectionEnd = 13
+        
+        md.toggleBold(textarea)
+        
+        runner.assertEqual(textarea.value, 'Hello world')
+      })
+      
+      runner.test('Should insert bold markers at cursor when no selection', (textarea) => {
+        textarea.value = 'Hello world'
+        textarea.selectionStart = 6
+        textarea.selectionEnd = 6
+        
+        md.toggleBold(textarea)
+        
+        runner.assert(textarea.value.includes('**'), 'Should contain bold markers')
+      })
+      
+      runner.test('Should handle bold at start of text', (textarea) => {
+        textarea.value = 'world'
+        textarea.selectionStart = 0
+        textarea.selectionEnd = 5
+        
+        md.toggleBold(textarea)
+        
+        runner.assertEqual(textarea.value, '**world**')
+      })
+      
+      runner.test('Should handle bold at end of text', (textarea) => {
+        textarea.value = 'Hello world'
+        textarea.selectionStart = 6
+        textarea.selectionEnd = 11
+        
+        md.toggleBold(textarea)
+        
+        runner.assertEqual(textarea.value, 'Hello **world**')
+      })
+    })
+    
+    // ============= ITALIC TESTS =============
+    runner.suite('Italic Formatting', () => {
+      runner.test('Should wrap selected text in italic markers', (textarea) => {
+        textarea.value = 'Hello world'
+        textarea.selectionStart = 6
+        textarea.selectionEnd = 11
+        
+        md.toggleItalic(textarea)
+        
+        runner.assertEqual(textarea.value, 'Hello _world_')
+      })
+      
+      runner.test('Should remove italic markers when toggling off', (textarea) => {
+        textarea.value = 'Hello _world_'
+        textarea.selectionStart = 7
+        textarea.selectionEnd = 12
+        
+        md.toggleItalic(textarea)
+        
+        runner.assertEqual(textarea.value, 'Hello world')
+      })
+      
+      runner.test('Should work with bold and italic together', (textarea) => {
+        textarea.value = 'Hello world'
+        textarea.selectionStart = 6
+        textarea.selectionEnd = 11
+        
+        md.toggleBold(textarea)
+        runner.assertEqual(textarea.value, 'Hello **world**')
+        
+        textarea.selectionStart = 8
+        textarea.selectionEnd = 13
+        
+        md.toggleItalic(textarea)
+        runner.assert(textarea.value.includes('_') && textarea.value.includes('**'))
+      })
+    })
+    
+    // ============= LINK TESTS =============
+    runner.suite('Link Insertion', () => {
+      runner.test('Should create link with selected text', (textarea) => {
+        textarea.value = 'Check out GitHub'
+        textarea.selectionStart = 10
+        textarea.selectionEnd = 16
+        
+        md.insertLink(textarea)
+        
+        runner.assert(textarea.value.includes('[GitHub]'), 'Should wrap text in brackets')
+        runner.assert(textarea.value.includes('(url)'), 'Should add URL placeholder')
+      })
+      
+      runner.test('Should detect URL and create proper link', (textarea) => {
+        textarea.value = 'Visit https://github.com today'
+        textarea.selectionStart = 6
+        textarea.selectionEnd = 24
+        
+        md.insertLink(textarea)
+        
+        runner.assert(textarea.value.includes('[Link text](https://github.com)'), 'Should use URL as link target')
+      })
+      
+      runner.test('Should insert link template at cursor', (textarea) => {
+        textarea.value = 'Hello world'
+        textarea.selectionStart = 6
+        textarea.selectionEnd = 6
+        
+        md.insertLink(textarea)
+        
+        runner.assert(textarea.value.includes('['), 'Should contain opening bracket')
+        runner.assert(textarea.value.includes(']('), 'Should contain link syntax')
+      })
+      
+      runner.test('Should accept custom URL option', (textarea) => {
+        textarea.value = 'Hello world'
+        textarea.selectionStart = 6
+        textarea.selectionEnd = 11
+        
+        md.insertLink(textarea, { url: 'https://example.com' })
+        
+        runner.assert(textarea.value.includes('[world](https://example.com)'), 'Should use provided URL')
+      })
+    })
+    
+    // ============= LIST TESTS =============
+    runner.suite('List Operations', () => {
+      runner.test('Should add bullet to current line', (textarea) => {
+        textarea.value = 'Item one\nItem two\nItem three'
+        textarea.selectionStart = 5
+        textarea.selectionEnd = 5
+        
+        md.toggleBulletList(textarea)
+        
+        runner.assert(textarea.value.startsWith('- Item one'), 'First line should have bullet')
+      })
+      
+      runner.test('Should remove bullet when toggling off', (textarea) => {
+        textarea.value = '- Item one\n- Item two'
+        textarea.selectionStart = 5
+        textarea.selectionEnd = 5
+        
+        md.toggleBulletList(textarea)
+        
+        runner.assertEqual(textarea.value.split('\n')[0], 'Item one', 'Should remove bullet')
+      })
+      
+      runner.test('Should convert numbered to bullet list', (textarea) => {
+        textarea.value = '1. Item one\n2. Item two'
+        textarea.selectionStart = 5
+        textarea.selectionEnd = 5
+        
+        md.toggleBulletList(textarea)
+        
+        runner.assert(textarea.value.startsWith('- Item one'), 'Should convert to bullet')
+      })
+      
+      runner.test('Should add numbers to lines', (textarea) => {
+        textarea.value = 'First\nSecond\nThird'
+        textarea.selectionStart = 0
+        textarea.selectionEnd = 18
+        
+        md.toggleNumberedList(textarea)
+        
+        const lines = textarea.value.split('\n')
+        runner.assert(lines[0].startsWith('1. '), 'First line should be 1.')
+        runner.assert(lines[1].startsWith('2. '), 'Second line should be 2.')
+        runner.assert(lines[2].startsWith('3. '), 'Third line should be 3.')
+      })
+      
+      runner.test('Should handle task list', (textarea) => {
+        textarea.value = 'Task one\nTask two'
+        textarea.selectionStart = 0
+        textarea.selectionEnd = 16
+        
+        md.toggleTaskList(textarea)
+        
+        runner.assert(textarea.value.includes('- [ ] Task one'), 'Should add task checkbox')
+        runner.assert(textarea.value.includes('- [ ] Task two'), 'Should add task checkbox')
+      })
+    })
+    
+    // ============= CODE TESTS =============
+    runner.suite('Code Formatting', () => {
+      runner.test('Should wrap inline code in backticks', (textarea) => {
+        textarea.value = 'Use the console.log function'
+        textarea.selectionStart = 8
+        textarea.selectionEnd = 19
+        
+        md.toggleCode(textarea)
+        
+        runner.assert(textarea.value.includes('`console.log`'), 'Should wrap in backticks')
+      })
+      
+      runner.test('Should create code block for multiline', (textarea) => {
+        textarea.value = 'function test() {\n  return true\n}'
+        textarea.selectionStart = 0
+        textarea.selectionEnd = 34
+        
+        md.toggleCode(textarea)
+        
+        runner.assert(textarea.value.includes('```'), 'Should use triple backticks')
+        runner.assert(textarea.value.split('```').length === 3, 'Should have opening and closing blocks')
+      })
+      
+      runner.test('Should toggle code formatting off', (textarea) => {
+        textarea.value = 'Use `code` here'
+        textarea.selectionStart = 5
+        textarea.selectionEnd = 10
+        
+        md.toggleCode(textarea)
+        
+        runner.assertEqual(textarea.value, 'Use code here')
+      })
+    })
+    
+    // ============= QUOTE TESTS =============
+    runner.suite('Quote Formatting', () => {
+      runner.test('Should add quote markers to lines', (textarea) => {
+        textarea.value = 'This is a quote\nWith multiple lines'
+        textarea.selectionStart = 0
+        textarea.selectionEnd = 35
+        
+        md.toggleQuote(textarea)
+        
+        const lines = textarea.value.split('\n')
+        runner.assert(lines[0].startsWith('> '), 'First line should be quoted')
+        runner.assert(lines[1].startsWith('> '), 'Second line should be quoted')
+      })
+      
+      runner.test('Should remove quote markers when toggling', (textarea) => {
+        textarea.value = '> Quoted text\n> Another line'
+        textarea.selectionStart = 0
+        textarea.selectionEnd = 28
+        
+        md.toggleQuote(textarea)
+        
+        runner.assertEqual(textarea.value.split('\n')[0], 'Quoted text')
+      })
+    })
+    
+    // ============= HEADER TESTS =============
+    runner.suite('Header Formatting', () => {
+      runner.test('Should add H1 header', (textarea) => {
+        textarea.value = 'Main Title'
+        textarea.selectionStart = 0
+        textarea.selectionEnd = 10
+        
+        md.insertHeader(textarea, 1)
+        
+        runner.assertEqual(textarea.value, '# Main Title')
+      })
+      
+      runner.test('Should add H2 header', (textarea) => {
+        textarea.value = 'Subtitle'
+        textarea.selectionStart = 0
+        textarea.selectionEnd = 8
+        
+        md.insertHeader(textarea, 2)
+        
+        runner.assertEqual(textarea.value, '## Subtitle')
+      })
+      
+      runner.test('Should replace existing header level', (textarea) => {
+        textarea.value = '### Third Level'
+        textarea.selectionStart = 4
+        textarea.selectionEnd = 4
+        
+        md.insertHeader(textarea, 1)
+        
+        runner.assertEqual(textarea.value, '# Third Level')
+      })
+    })
+    
+    // ============= UTILITY TESTS =============
+    runner.suite('Utility Functions', () => {
+      runner.test('Should detect bold format', (textarea) => {
+        textarea.value = 'Hello **world** today'
+        textarea.selectionStart = 10
+        textarea.selectionEnd = 10
+        
+        const formats = md.getActiveFormats(textarea)
+        runner.assert(formats.includes('bold'), 'Should detect bold')
+      })
+      
+      runner.test('Should detect italic format', (textarea) => {
+        textarea.value = 'Hello _world_ today'
+        textarea.selectionStart = 9
+        textarea.selectionEnd = 9
+        
+        const formats = md.getActiveFormats(textarea)
+        runner.assert(formats.includes('italic'), 'Should detect italic')
+      })
+      
+      runner.test('Should detect list formats', (textarea) => {
+        textarea.value = '- Bullet item\n1. Numbered item'
+        
+        textarea.selectionStart = 5
+        textarea.selectionEnd = 5
+        runner.assert(md.hasFormat(textarea, 'bullet-list'), 'Should detect bullet list')
+        
+        textarea.selectionStart = 20
+        textarea.selectionEnd = 20
+        runner.assert(md.hasFormat(textarea, 'numbered-list'), 'Should detect numbered list')
+      })
+      
+      runner.test('Should expand selection to word', (textarea) => {
+        textarea.value = 'Hello beautiful world'
+        textarea.selectionStart = 8
+        textarea.selectionEnd = 8
+        
+        md.expandSelection(textarea, { toWord: true })
+        
+        runner.assertSelection(textarea, 6, 15)
+      })
+      
+      runner.test('Should expand selection to line', (textarea) => {
+        textarea.value = 'Line one\nLine two\nLine three'
+        textarea.selectionStart = 12
+        textarea.selectionEnd = 12
+        
+        md.expandSelection(textarea, { toLine: true })
+        
+        runner.assertSelection(textarea, 9, 17)
+      })
+    })
+    
+    // ============= EDGE CASES =============
+    runner.suite('Edge Cases', () => {
+      runner.test('Should handle empty textarea', (textarea) => {
+        textarea.value = ''
+        
+        md.toggleBold(textarea)
+        
+        runner.assert(textarea.value.length > 0, 'Should insert something')
+      })
+      
+      runner.test('Should handle selection at start', (textarea) => {
+        textarea.value = 'Hello world'
+        textarea.selectionStart = 0
+        textarea.selectionEnd = 5
+        
+        md.toggleBold(textarea)
+        
+        runner.assertEqual(textarea.value, '**Hello** world')
+      })
+      
+      runner.test('Should handle selection at end', (textarea) => {
+        textarea.value = 'Hello world'
+        textarea.selectionStart = 6
+        textarea.selectionEnd = 11
+        
+        md.toggleItalic(textarea)
+        
+        runner.assertEqual(textarea.value, 'Hello _world_')
+      })
+      
+      runner.test('Should not modify disabled textarea', (textarea) => {
+        textarea.value = 'Hello world'
+        textarea.disabled = true
+        
+        md.toggleBold(textarea)
+        
+        runner.assertEqual(textarea.value, 'Hello world')
+        
+        textarea.disabled = false
+      })
+      
+      runner.test('Should not modify readonly textarea', (textarea) => {
+        textarea.value = 'Hello world'
+        textarea.readOnly = true
+        
+        md.toggleBold(textarea)
+        
+        runner.assertEqual(textarea.value, 'Hello world')
+        
+        textarea.readOnly = false
+      })
+      
+      runner.test('Should handle special characters', (textarea) => {
+        textarea.value = 'Hello *_special_* chars'
+        textarea.selectionStart = 6
+        textarea.selectionEnd = 17
+        
+        md.toggleBold(textarea)
+        
+        runner.assert(textarea.value.includes('**'), 'Should still add bold markers')
+      })
+      
+      runner.test('Should handle very long text', (textarea) => {
+        textarea.value = 'x'.repeat(10000)
+        textarea.selectionStart = 5000
+        textarea.selectionEnd = 5010
+        
+        md.toggleBold(textarea)
+        
+        runner.assert(textarea.value.length > 10000, 'Should handle long text')
+      })
+    })
+    
+    // ============= STRIKETHROUGH TESTS =============
+    runner.suite('Strikethrough Formatting', () => {
+      runner.test('Should wrap text in strikethrough markers', (textarea) => {
+        textarea.value = 'Hello world'
+        textarea.selectionStart = 6
+        textarea.selectionEnd = 11
+        
+        md.toggleStrikethrough(textarea)
+        
+        runner.assertEqual(textarea.value, 'Hello ~~world~~')
+      })
+      
+      runner.test('Should remove strikethrough when toggling', (textarea) => {
+        textarea.value = 'Hello ~~world~~'
+        textarea.selectionStart = 8
+        textarea.selectionEnd = 13
+        
+        md.toggleStrikethrough(textarea)
+        
+        runner.assertEqual(textarea.value, 'Hello world')
+      })
+    })
+    
+    // ============= CUSTOM FORMAT TESTS =============
+    runner.suite('Custom Formatting', () => {
+      runner.test('Should apply custom format', (textarea) => {
+        textarea.value = 'Hello world'
+        textarea.selectionStart = 6
+        textarea.selectionEnd = 11
+        
+        md.applyCustomFormat(textarea, {
+          prefix: '==',
+          suffix: '==',
+          trimFirst: true
+        })
+        
+        runner.assertEqual(textarea.value, 'Hello ==world==')
+      })
+      
+      runner.test('Should apply custom multiline format', (textarea) => {
+        textarea.value = 'Line 1\nLine 2'
+        textarea.selectionStart = 0
+        textarea.selectionEnd = 13
+        
+        md.applyCustomFormat(textarea, {
+          prefix: '>>> ',
+          multiline: true
+        })
+        
+        runner.assert(textarea.value.includes('>>> Line 1'), 'Should prefix first line')
+        runner.assert(textarea.value.includes('>>> Line 2'), 'Should prefix second line')
+      })
+    })
+    
+    // Run all tests
+    async function runAllTests() {
+      const resultsDiv = document.getElementById('test-results')
+      const summaryDiv = document.getElementById('summary')
+      
+      resultsDiv.innerHTML = '<p>Running tests...</p>'
+      summaryDiv.innerHTML = ''
+      
+      const results = await runner.run()
+      
+      // Group results by suite
+      const suites = {}
+      results.forEach(result => {
+        if (!suites[result.suite]) {
+          suites[result.suite] = []
+        }
+        suites[result.suite].push(result)
+      })
+      
+      // Display results
+      let html = ''
+      let totalPass = 0
+      let totalFail = 0
+      
+      for (const [suiteName, tests] of Object.entries(suites)) {
+        html += `<div class="test-suite">`
+        html += `<div class="suite-title">${suiteName}</div>`
+        
+        tests.forEach(test => {
+          const statusIcon = test.status === 'pass' ? '✅' : '❌'
+          html += `<div class="test-case ${test.status}">`
+          html += `<span class="name">${test.name}</span>`
+          html += `<span class="status">${statusIcon} ${test.status.toUpperCase()}</span>`
+          if (test.error) {
+            html += `<div class="error-message">${test.error}</div>`
+          }
+          html += `</div>`
+          
+          if (test.status === 'pass') totalPass++
+          else totalFail++
+        })
+        
+        html += `</div>`
+      }
+      
+      resultsDiv.innerHTML = html
+      
+      // Display summary
+      const total = totalPass + totalFail
+      const percentage = Math.round((totalPass / total) * 100)
+      
+      summaryDiv.className = totalFail === 0 ? 'all-pass' : 'has-fail'
+      summaryDiv.innerHTML = `
+        <div>Test Results: ${percentage}% passed</div>
+        <div class="stats">
+          <div class="stat">
+            <span class="stat-value pass-count">${totalPass}</span>
+            <span>passed</span>
+          </div>
+          <div class="stat">
+            <span class="stat-value fail-count">${totalFail}</span>
+            <span>failed</span>
+          </div>
+          <div class="stat">
+            <span class="stat-value total-count">${total}</span>
+            <span>total</span>
+          </div>
+        </div>
+      `
+      
+      // Log to console
+      console.log(`Tests complete: ${totalPass}/${total} passed`)
+      if (totalFail > 0) {
+        console.log('Failed tests:', results.filter(r => r.status === 'fail'))
+      }
+    }
+    
+    // Auto-run tests on load
+    window.addEventListener('load', runAllTests)
+  </script>
+</body>
+</html>

@@ -1,0 +1,677 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Markdown Actions - Demo</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+    
+    h1 {
+      color: #333;
+      margin-bottom: 10px;
+    }
+    
+    .subtitle {
+      color: #666;
+      margin-bottom: 30px;
+    }
+    
+    .container {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      margin-bottom: 20px;
+    }
+    
+    @media (max-width: 768px) {
+      .container {
+        grid-template-columns: 1fr;
+      }
+    }
+    
+    .editor-panel, .preview-panel {
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      overflow: hidden;
+    }
+    
+    .panel-header {
+      background: #f8f9fa;
+      padding: 10px 15px;
+      border-bottom: 1px solid #dee2e6;
+      font-weight: 600;
+      color: #495057;
+    }
+    
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      padding: 12px;
+      background: #fff;
+      border-bottom: 1px solid #e1e4e8;
+    }
+    
+    .toolbar-group {
+      display: flex;
+      gap: 4px;
+      padding: 0 8px;
+      border-right: 1px solid #e1e4e8;
+    }
+    
+    .toolbar-group:last-child {
+      border-right: none;
+    }
+    
+    .toolbar-btn {
+      padding: 6px 12px;
+      border: 1px solid #d1d5da;
+      background: white;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 14px;
+      transition: all 0.2s;
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 32px;
+    }
+    
+    .toolbar-btn:hover {
+      background: #f6f8fa;
+      border-color: #0366d6;
+    }
+    
+    .toolbar-btn.active {
+      background: #0366d6;
+      color: white;
+      border-color: #0366d6;
+    }
+    
+    .toolbar-btn[title]:hover::after {
+      content: attr(title);
+      position: absolute;
+      bottom: -30px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #333;
+      color: white;
+      padding: 4px 8px;
+      border-radius: 3px;
+      font-size: 12px;
+      white-space: nowrap;
+      z-index: 1000;
+      pointer-events: none;
+    }
+    
+    #editor {
+      width: 100%;
+      min-height: 400px;
+      padding: 15px;
+      border: none;
+      font-family: 'SF Mono', Monaco, 'Inconsolata', 'Fira Code', monospace;
+      font-size: 14px;
+      line-height: 1.6;
+      resize: vertical;
+      outline: none;
+    }
+    
+    #preview {
+      padding: 15px;
+      min-height: 400px;
+      overflow-y: auto;
+      font-size: 16px;
+      line-height: 1.6;
+    }
+    
+    #preview h1, #preview h2, #preview h3, #preview h4, #preview h5, #preview h6 {
+      margin-top: 24px;
+      margin-bottom: 16px;
+      font-weight: 600;
+      line-height: 1.25;
+    }
+    
+    #preview h1 { font-size: 2em; border-bottom: 1px solid #eaecef; padding-bottom: 0.3em; }
+    #preview h2 { font-size: 1.5em; border-bottom: 1px solid #eaecef; padding-bottom: 0.3em; }
+    #preview h3 { font-size: 1.25em; }
+    #preview h4 { font-size: 1em; }
+    #preview h5 { font-size: 0.875em; }
+    #preview h6 { font-size: 0.85em; color: #6a737d; }
+    
+    #preview code {
+      background: #f6f8fa;
+      padding: 0.2em 0.4em;
+      border-radius: 3px;
+      font-size: 85%;
+    }
+    
+    #preview pre {
+      background: #f6f8fa;
+      padding: 16px;
+      border-radius: 6px;
+      overflow-x: auto;
+    }
+    
+    #preview pre code {
+      background: none;
+      padding: 0;
+    }
+    
+    #preview blockquote {
+      margin: 0;
+      padding: 0 1em;
+      color: #6a737d;
+      border-left: 0.25em solid #dfe2e5;
+    }
+    
+    #preview ul, #preview ol {
+      padding-left: 2em;
+    }
+    
+    #preview a {
+      color: #0366d6;
+      text-decoration: none;
+    }
+    
+    #preview a:hover {
+      text-decoration: underline;
+    }
+    
+    #preview img {
+      max-width: 100%;
+    }
+    
+    #preview hr {
+      border: none;
+      border-top: 2px solid #e1e4e8;
+      margin: 24px 0;
+    }
+    
+    #preview table {
+      border-collapse: collapse;
+      width: 100%;
+      margin: 16px 0;
+    }
+    
+    #preview th, #preview td {
+      padding: 6px 13px;
+      border: 1px solid #dfe2e5;
+    }
+    
+    #preview th {
+      background: #f6f8fa;
+      font-weight: 600;
+    }
+    
+    .status {
+      padding: 10px 15px;
+      background: #f6f8fa;
+      border-top: 1px solid #e1e4e8;
+      font-size: 12px;
+      color: #586069;
+    }
+    
+    .keyboard-hint {
+      margin-top: 20px;
+      padding: 15px;
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    .keyboard-hint h3 {
+      margin-top: 0;
+      color: #333;
+    }
+    
+    .shortcuts {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 10px;
+    }
+    
+    .shortcut {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    
+    kbd {
+      background: #f6f8fa;
+      border: 1px solid #d1d5da;
+      border-radius: 3px;
+      padding: 2px 4px;
+      font-size: 11px;
+      font-family: monospace;
+    }
+  </style>
+</head>
+<body>
+  <h1>Markdown Actions Demo</h1>
+  <p class="subtitle">A lightweight, functional markdown toolbar library</p>
+  
+  <div class="container">
+    <div class="editor-panel">
+      <div class="panel-header">Editor</div>
+      <div class="toolbar">
+        <div class="toolbar-group">
+          <button class="toolbar-btn" id="bold-btn" title="Bold (Ctrl+B)">
+            <strong>B</strong>
+          </button>
+          <button class="toolbar-btn" id="italic-btn" title="Italic (Ctrl+I)">
+            <em>I</em>
+          </button>
+          <button class="toolbar-btn" id="strikethrough-btn" title="Strikethrough">
+            <s>S</s>
+          </button>
+        </div>
+        
+        <div class="toolbar-group">
+          <button class="toolbar-btn" id="h1-btn" title="Heading 1">
+            H1
+          </button>
+          <button class="toolbar-btn" id="h2-btn" title="Heading 2">
+            H2
+          </button>
+          <button class="toolbar-btn" id="h3-btn" title="Heading 3">
+            H3
+          </button>
+        </div>
+        
+        <div class="toolbar-group">
+          <button class="toolbar-btn" id="link-btn" title="Link (Ctrl+K)">
+            🔗
+          </button>
+          <button class="toolbar-btn" id="image-btn" title="Image">
+            🖼️
+          </button>
+          <button class="toolbar-btn" id="code-btn" title="Code">
+            &lt;/&gt;
+          </button>
+        </div>
+        
+        <div class="toolbar-group">
+          <button class="toolbar-btn" id="bullet-btn" title="Bullet List">
+            • 
+          </button>
+          <button class="toolbar-btn" id="number-btn" title="Numbered List">
+            1.
+          </button>
+          <button class="toolbar-btn" id="task-btn" title="Task List">
+            ☑
+          </button>
+        </div>
+        
+        <div class="toolbar-group">
+          <button class="toolbar-btn" id="quote-btn" title="Quote">
+            "
+          </button>
+        </div>
+      </div>
+      <textarea id="editor" placeholder="Start typing markdown here...
+
+Try selecting text and clicking the toolbar buttons, or use keyboard shortcuts:
+- Ctrl/Cmd + B for bold
+- Ctrl/Cmd + I for italic
+- Ctrl/Cmd + K for link
+
+The library handles:
+- Smart selection expansion
+- Format toggling (apply/remove)
+- Proper cursor positioning
+- Native undo/redo support"></textarea>
+      <div class="status">
+        <span id="status">Ready</span> | 
+        <span id="selection-info">No selection</span>
+      </div>
+    </div>
+    
+    <div class="preview-panel">
+      <div class="panel-header">Preview</div>
+      <div id="preview"></div>
+    </div>
+  </div>
+  
+  <div class="keyboard-hint">
+    <h3>Keyboard Shortcuts</h3>
+    <div class="shortcuts">
+      <div class="shortcut">
+        <kbd>Ctrl</kbd> + <kbd>B</kbd> Bold
+      </div>
+      <div class="shortcut">
+        <kbd>Ctrl</kbd> + <kbd>I</kbd> Italic
+      </div>
+      <div class="shortcut">
+        <kbd>Ctrl</kbd> + <kbd>K</kbd> Link
+      </div>
+      <div class="shortcut">
+        <kbd>Ctrl</kbd> + <kbd>E</kbd> Code
+      </div>
+      <div class="shortcut">
+        <kbd>Ctrl</kbd> + <kbd>L</kbd> List
+      </div>
+      <div class="shortcut">
+        <kbd>Ctrl</kbd> + <kbd>Q</kbd> Quote
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import * as md from './src/index.js'
+    
+    const editor = document.getElementById('editor')
+    const preview = document.getElementById('preview')
+    const status = document.getElementById('status')
+    const selectionInfo = document.getElementById('selection-info')
+    
+    // Simple markdown to HTML converter for preview
+    function renderMarkdown(text) {
+      return text
+        // Headers
+        .replace(/^######\s+(.+)$/gm, '<h6>$1</h6>')
+        .replace(/^#####\s+(.+)$/gm, '<h5>$1</h5>')
+        .replace(/^####\s+(.+)$/gm, '<h4>$1</h4>')
+        .replace(/^###\s+(.+)$/gm, '<h3>$1</h3>')
+        .replace(/^##\s+(.+)$/gm, '<h2>$1</h2>')
+        .replace(/^#\s+(.+)$/gm, '<h1>$1</h1>')
+        // Bold
+        .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+        // Italic
+        .replace(/_(.+?)_/g, '<em>$1</em>')
+        // Strikethrough
+        .replace(/~~(.+?)~~/g, '<s>$1</s>')
+        // Code blocks
+        .replace(/```[\s\S]*?```/g, match => {
+          const code = match.slice(3, -3).trim()
+          return `<pre><code>${escapeHtml(code)}</code></pre>`
+        })
+        // Inline code
+        .replace(/`(.+?)`/g, '<code>$1</code>')
+        // Links
+        .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2">$1</a>')
+        // Images
+        .replace(/!\[([^\]]*)\]\(([^)]+)\)/g, '<img src="$2" alt="$1">')
+        // Blockquotes
+        .replace(/^>\s+(.+)$/gm, '<blockquote>$1</blockquote>')
+        // Unordered lists
+        .replace(/^-\s+(.+)$/gm, '<li>$1</li>')
+        .replace(/(<li>.*<\/li>)/s, '<ul>$1</ul>')
+        // Task lists
+        .replace(/^-\s+\[\s\]\s+(.+)$/gm, '<li><input type="checkbox" disabled> $1</li>')
+        .replace(/^-\s+\[x\]\s+(.+)$/gm, '<li><input type="checkbox" checked disabled> $1</li>')
+        // Line breaks
+        .replace(/\n\n/g, '</p><p>')
+        .replace(/^/, '<p>')
+        .replace(/$/, '</p>')
+        // Clean up empty paragraphs
+        .replace(/<p><\/p>/g, '')
+        .replace(/<p>(<h[1-6]>)/g, '$1')
+        .replace(/(<\/h[1-6]>)<\/p>/g, '$1')
+        .replace(/<p>(<pre>)/g, '$1')
+        .replace(/(<\/pre>)<\/p>/g, '$1')
+        .replace(/<p>(<blockquote>)/g, '$1')
+        .replace(/(<\/blockquote>)<\/p>/g, '$1')
+        .replace(/<p>(<ul>)/g, '$1')
+        .replace(/(<\/ul>)<\/p>/g, '$1')
+    }
+    
+    function escapeHtml(text) {
+      const div = document.createElement('div')
+      div.textContent = text
+      return div.innerHTML
+    }
+    
+    // Update preview
+    function updatePreview() {
+      preview.innerHTML = renderMarkdown(editor.value)
+    }
+    
+    // Update button states
+    function updateButtonStates() {
+      const formats = md.getActiveFormats(editor)
+      
+      // Update all buttons
+      document.querySelectorAll('.toolbar-btn').forEach(btn => {
+        btn.classList.remove('active')
+      })
+      
+      // Set active states
+      if (formats.includes('bold')) {
+        document.getElementById('bold-btn').classList.add('active')
+      }
+      if (formats.includes('italic')) {
+        document.getElementById('italic-btn').classList.add('active')
+      }
+      if (formats.includes('code')) {
+        document.getElementById('code-btn').classList.add('active')
+      }
+      if (formats.includes('link')) {
+        document.getElementById('link-btn').classList.add('active')
+      }
+      if (formats.includes('bullet-list')) {
+        document.getElementById('bullet-btn').classList.add('active')
+      }
+      if (formats.includes('numbered-list')) {
+        document.getElementById('number-btn').classList.add('active')
+      }
+      if (formats.includes('task-list')) {
+        document.getElementById('task-btn').classList.add('active')
+      }
+      if (formats.includes('quote')) {
+        document.getElementById('quote-btn').classList.add('active')
+      }
+      
+      // Update selection info
+      const start = editor.selectionStart
+      const end = editor.selectionEnd
+      if (start === end) {
+        selectionInfo.textContent = `Cursor at ${start}`
+      } else {
+        selectionInfo.textContent = `Selected ${end - start} chars`
+      }
+    }
+    
+    // Toolbar button handlers
+    document.getElementById('bold-btn').addEventListener('click', () => {
+      md.toggleBold(editor)
+      updateButtonStates()
+      updatePreview()
+      editor.focus()
+    })
+    
+    document.getElementById('italic-btn').addEventListener('click', () => {
+      md.toggleItalic(editor)
+      updateButtonStates()
+      updatePreview()
+      editor.focus()
+    })
+    
+    document.getElementById('strikethrough-btn').addEventListener('click', () => {
+      md.toggleStrikethrough(editor)
+      updateButtonStates()
+      updatePreview()
+      editor.focus()
+    })
+    
+    document.getElementById('h1-btn').addEventListener('click', () => {
+      md.insertHeader(editor, 1)
+      updateButtonStates()
+      updatePreview()
+      editor.focus()
+    })
+    
+    document.getElementById('h2-btn').addEventListener('click', () => {
+      md.insertHeader(editor, 2)
+      updateButtonStates()
+      updatePreview()
+      editor.focus()
+    })
+    
+    document.getElementById('h3-btn').addEventListener('click', () => {
+      md.insertHeader(editor, 3)
+      updateButtonStates()
+      updatePreview()
+      editor.focus()
+    })
+    
+    document.getElementById('link-btn').addEventListener('click', () => {
+      md.insertLink(editor)
+      updateButtonStates()
+      updatePreview()
+      editor.focus()
+    })
+    
+    document.getElementById('image-btn').addEventListener('click', () => {
+      md.insertImage(editor)
+      updateButtonStates()
+      updatePreview()
+      editor.focus()
+    })
+    
+    document.getElementById('code-btn').addEventListener('click', () => {
+      md.toggleCode(editor)
+      updateButtonStates()
+      updatePreview()
+      editor.focus()
+    })
+    
+    document.getElementById('bullet-btn').addEventListener('click', () => {
+      md.toggleBulletList(editor)
+      updateButtonStates()
+      updatePreview()
+      editor.focus()
+    })
+    
+    document.getElementById('number-btn').addEventListener('click', () => {
+      md.toggleNumberedList(editor)
+      updateButtonStates()
+      updatePreview()
+      editor.focus()
+    })
+    
+    document.getElementById('task-btn').addEventListener('click', () => {
+      md.toggleTaskList(editor)
+      updateButtonStates()
+      updatePreview()
+      editor.focus()
+    })
+    
+    document.getElementById('quote-btn').addEventListener('click', () => {
+      md.toggleQuote(editor)
+      updateButtonStates()
+      updatePreview()
+      editor.focus()
+    })
+    
+    // Keyboard shortcuts
+    editor.addEventListener('keydown', (e) => {
+      if (e.ctrlKey || e.metaKey) {
+        let handled = true
+        
+        switch(e.key.toLowerCase()) {
+          case 'b':
+            e.preventDefault()
+            md.toggleBold(editor)
+            break
+          case 'i':
+            e.preventDefault()
+            md.toggleItalic(editor)
+            break
+          case 'k':
+            e.preventDefault()
+            md.insertLink(editor)
+            break
+          case 'e':
+            e.preventDefault()
+            md.toggleCode(editor)
+            break
+          case 'l':
+            e.preventDefault()
+            md.toggleBulletList(editor)
+            break
+          case 'q':
+            e.preventDefault()
+            md.toggleQuote(editor)
+            break
+          default:
+            handled = false
+        }
+        
+        if (handled) {
+          updateButtonStates()
+          updatePreview()
+        }
+      }
+    })
+    
+    // Update on input
+    editor.addEventListener('input', () => {
+      updatePreview()
+      updateButtonStates()
+    })
+    
+    // Update on selection change
+    editor.addEventListener('selectionchange', updateButtonStates)
+    editor.addEventListener('keyup', updateButtonStates)
+    editor.addEventListener('mouseup', updateButtonStates)
+    
+    // Initial render
+    updatePreview()
+    updateButtonStates()
+    
+    // Set some sample text
+    editor.value = `# Welcome to Markdown Actions
+
+This is a **lightweight** library for adding _markdown_ formatting to any textarea.
+
+## Features
+
+- Simple functional API
+- Smart selection handling
+- Format toggling
+- Native undo/redo support
+- Zero dependencies
+- ~3-4kb gzipped
+
+## Try it out!
+
+1. Select some text
+2. Click a toolbar button
+3. Or use keyboard shortcuts
+
+> Blockquotes are easy too!
+
+Here's some \`inline code\` and a [link](https://github.com).
+
+- Bullet lists
+- Work great
+
+1. So do
+2. Numbered lists
+3. Like this one
+
+- [ ] Task lists
+- [x] Are supported too!`
+    
+    updatePreview()
+    updateButtonStates()
+    
+    // Log that we're ready
+    console.log('Markdown Actions loaded successfully!')
+    console.log('Available functions:', Object.keys(md))
+  </script>
+</body>
+</html>
