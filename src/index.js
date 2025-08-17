@@ -159,19 +159,33 @@ export function insertHeader(textarea, level = 1, toggle = false) {
   const headerKey = `header${level === 1 ? '1' : level}`
   const style = mergeWithDefaults(FORMATS[headerKey] || FORMATS.header1)
   
-  // Save original positions before any operations
+  // Get the current line to check existing header BEFORE any operations
+  const value = textarea.value
   const originalStart = textarea.selectionStart
   const originalEnd = textarea.selectionEnd
+  
+  // Find the start of the current line
+  let lineStart = originalStart
+  while (lineStart > 0 && value[lineStart - 1] !== '\n') {
+    lineStart--
+  }
+  
+  // Find the end of the current line  
+  let lineEnd = originalEnd
+  while (lineEnd < value.length && value[lineEnd] !== '\n') {
+    lineEnd++
+  }
+  
+  // Get current line content
+  const currentLineContent = value.slice(lineStart, lineEnd)
+  const existingHeaderMatch = currentLineContent.match(/^(#{1,6})\s*/)
+  const existingLevel = existingHeaderMatch ? existingHeaderMatch[1].length : 0
   
   // Use applyLineOperation for consistent behavior
   const result = applyLineOperation(
     textarea,
     (ta) => {
       const currentLine = ta.value.slice(ta.selectionStart, ta.selectionEnd)
-      
-      // Check if we're removing or changing existing header
-      const existingHeaderMatch = currentLine.match(/^(#{1,6})\s*/)
-      const existingLevel = existingHeaderMatch ? existingHeaderMatch[1].length : 0
       
       // Remove any existing header formatting
       const cleanedLine = currentLine.replace(/^#{1,6}\s*/, '')
@@ -181,6 +195,9 @@ export function insertHeader(textarea, level = 1, toggle = false) {
       // If toggle mode and current line has the same header level, remove it
       if (toggle && existingLevel === level) {
         newLine = cleanedLine
+      } else if (existingLevel > 0) {
+        // Replace existing header with new one
+        newLine = style.prefix + cleanedLine
       } else {
         // Apply new header
         newLine = style.prefix + cleanedLine
@@ -196,10 +213,7 @@ export function insertHeader(textarea, level = 1, toggle = false) {
       prefix: style.prefix,
       // Custom handler for header-specific logic
       adjustSelection: (isRemoving, selStart, selEnd, lineStart) => {
-        const currentLine = textarea.value.slice(lineStart, textarea.selectionEnd)
-        const existingHeaderMatch = currentLine.match(/^(#{1,6})\s*/)
         const existingPrefixLength = existingHeaderMatch ? existingHeaderMatch[0].length : 0
-        const existingLevel = existingHeaderMatch ? existingHeaderMatch[1].length : 0
         
         // Check if we're actually removing (toggle off)
         const actuallyRemoving = toggle && existingLevel === level
