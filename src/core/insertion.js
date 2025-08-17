@@ -42,11 +42,11 @@ export function insertText(textarea, { text, selectionStart, selectionEnd }) {
   // Store the original value to check if execCommand actually changed it
   const originalValue = textarea.value
 
-  // Only try execCommand if there's no selection (just inserting at cursor)
-  // For replacements, we should use manual mode
+  // Try execCommand for both insertions and replacements to preserve undo history
+  // execCommand('insertText') can handle replacing selected text
   const hasSelection = originalSelectionStart !== originalSelectionEnd
   
-  if (!hasSelection && (canInsertText === null || canInsertText === true)) {
+  if (canInsertText === null || canInsertText === true) {
     textarea.contentEditable = 'true'
     try {
       canInsertText = document.execCommand('insertText', false, text)
@@ -54,9 +54,6 @@ export function insertText(textarea, { text, selectionStart, selectionEnd }) {
       canInsertText = false
     }
     textarea.contentEditable = 'false'
-  } else if (hasSelection) {
-    if (debugMode) console.log('Has selection, skipping execCommand and using manual mode');
-    canInsertText = false
   }
 
   if (debugMode) {
