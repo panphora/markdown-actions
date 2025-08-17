@@ -50,8 +50,10 @@ export function insertText(textarea, { text, selectionStart, selectionEnd }) {
     textarea.contentEditable = 'true'
     try {
       canInsertText = document.execCommand('insertText', false, text)
+      if (debugMode) console.log('execCommand returned:', canInsertText, 'for text with', text.split('\n').length, 'lines');
     } catch (error) {
       canInsertText = false
+      if (debugMode) console.log('execCommand threw error:', error);
     }
     textarea.contentEditable = 'false'
   }
