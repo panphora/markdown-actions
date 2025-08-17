@@ -121,9 +121,9 @@
     <button onclick="applyFormat('toggleItalic')">Italic</button>
     <button onclick="applyFormat('toggleCode')">Code</button>
     <div class="separator"></div>
-    <button onclick="applyFormat('insertHeader', 1)">H1</button>
-    <button onclick="applyFormat('insertHeader', 2)">H2</button>
-    <button onclick="applyFormat('insertHeader', 3)">H3</button>
+    <button onclick="applyFormat('toggleH1')">H1</button>
+    <button onclick="applyFormat('toggleH2')">H2</button>
+    <button onclick="applyFormat('toggleH3')">H3</button>
     <div class="separator"></div>
     <button onclick="applyFormat('toggleQuote')">Quote</button>
     <button onclick="applyFormat('toggleTaskList')">Task List</button>
@@ -171,6 +171,9 @@ Click here and try the Task List button.</textarea>
 
   <script type="module">
     import markdownActions from './dist/markdown-actions.esm.js';
+    
+    // Enable debug mode for detailed logging
+    markdownActions.setDebugMode(true);
     
     const editor = document.getElementById('editor');
     const selectionInfo = document.getElementById('selection-info');

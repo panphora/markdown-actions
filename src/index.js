@@ -156,52 +156,75 @@ export function insertHeader(textarea, level = 1, toggle = false) {
   if (!textarea || textarea.disabled || textarea.readOnly) return
   if (level < 1 || level > 6) level = 1
   
+  debugLog('insertHeader', `============ START ============`);
+  debugLog('insertHeader', `Level: ${level}, Toggle: ${toggle}`);
+  debugLog('insertHeader', `Initial cursor: ${textarea.selectionStart}-${textarea.selectionEnd}`);
+  
   const headerKey = `header${level === 1 ? '1' : level}`
   const style = mergeWithDefaults(FORMATS[headerKey] || FORMATS.header1)
+  debugLog('insertHeader', `Style prefix: "${style.prefix}"`);
   
-  // Get the current line to check existing header BEFORE any operations
+  // Save original positions and get line info BEFORE applyLineOperation
   const value = textarea.value
   const originalStart = textarea.selectionStart
   const originalEnd = textarea.selectionEnd
   
-  // Find the start of the current line
+  // Find the current line boundaries to check existing header
   let lineStart = originalStart
   while (lineStart > 0 && value[lineStart - 1] !== '\n') {
     lineStart--
   }
-  
-  // Find the end of the current line  
   let lineEnd = originalEnd
   while (lineEnd < value.length && value[lineEnd] !== '\n') {
     lineEnd++
   }
   
-  // Get current line content
+  // Get current line and check for existing header
   const currentLineContent = value.slice(lineStart, lineEnd)
+  debugLog('insertHeader', `Current line (before): "${currentLineContent}"`);
+  
   const existingHeaderMatch = currentLineContent.match(/^(#{1,6})\s*/)
   const existingLevel = existingHeaderMatch ? existingHeaderMatch[1].length : 0
+  const existingPrefixLength = existingHeaderMatch ? existingHeaderMatch[0].length : 0
+  
+  debugLog('insertHeader', `Existing header check:`);
+  debugLog('insertHeader', `  - Match: ${existingHeaderMatch ? `"${existingHeaderMatch[0]}"` : 'none'}`);
+  debugLog('insertHeader', `  - Existing level: ${existingLevel}`);
+  debugLog('insertHeader', `  - Existing prefix length: ${existingPrefixLength}`);
+  debugLog('insertHeader', `  - Target level: ${level}`);
+  
+  // Determine if we're toggling off
+  const shouldToggleOff = toggle && existingLevel === level
+  debugLog('insertHeader', `Should toggle OFF: ${shouldToggleOff} (toggle=${toggle}, existingLevel=${existingLevel}, level=${level})`);
   
   // Use applyLineOperation for consistent behavior
   const result = applyLineOperation(
     textarea,
     (ta) => {
       const currentLine = ta.value.slice(ta.selectionStart, ta.selectionEnd)
+      debugLog('insertHeader', `Line in operation: "${currentLine}"`);
       
       // Remove any existing header formatting
       const cleanedLine = currentLine.replace(/^#{1,6}\s*/, '')
+      debugLog('insertHeader', `Cleaned line: "${cleanedLine}"`);
       
       let newLine
       
-      // If toggle mode and current line has the same header level, remove it
-      if (toggle && existingLevel === level) {
+      if (shouldToggleOff) {
+        // Toggle off - just use the cleaned line
+        debugLog('insertHeader', 'ACTION: Toggling OFF - removing header');
         newLine = cleanedLine
       } else if (existingLevel > 0) {
         // Replace existing header with new one
+        debugLog('insertHeader', `ACTION: Replacing H${existingLevel} with H${level}`);
         newLine = style.prefix + cleanedLine
       } else {
-        // Apply new header
+        // Add new header
+        debugLog('insertHeader', 'ACTION: Adding new header');
         newLine = style.prefix + cleanedLine
       }
+      
+      debugLog('insertHeader', `New line: "${newLine}"`);
       
       return {
         text: newLine,
@@ -211,28 +234,33 @@ export function insertHeader(textarea, level = 1, toggle = false) {
     },
     {
       prefix: style.prefix,
-      // Custom handler for header-specific logic
-      adjustSelection: (isRemoving, selStart, selEnd, lineStart) => {
-        const existingPrefixLength = existingHeaderMatch ? existingHeaderMatch[0].length : 0
+      // Custom selection adjustment for headers
+      adjustSelection: (isRemoving, selStart, selEnd, lineStartPos) => {
+        debugLog('insertHeader', `Adjusting selection:`);
+        debugLog('insertHeader', `  - isRemoving param: ${isRemoving}`);
+        debugLog('insertHeader', `  - shouldToggleOff: ${shouldToggleOff}`);
+        debugLog('insertHeader', `  - selStart: ${selStart}, selEnd: ${selEnd}`);
+        debugLog('insertHeader', `  - lineStartPos: ${lineStartPos}`);
         
-        // Check if we're actually removing (toggle off)
-        const actuallyRemoving = toggle && existingLevel === level
-        
-        if (actuallyRemoving) {
+        if (shouldToggleOff) {
           // Removing the header entirely
+          const adjustment = Math.max(selStart - existingPrefixLength, lineStartPos)
+          debugLog('insertHeader', `  - Removing header, adjusting by -${existingPrefixLength}`);
           return {
-            start: Math.max(selStart - existingPrefixLength, lineStart),
-            end: Math.max(selEnd - existingPrefixLength, lineStart)
+            start: adjustment,
+            end: selStart === selEnd ? adjustment : Math.max(selEnd - existingPrefixLength, lineStartPos)
           }
         } else if (existingPrefixLength > 0) {
           // Replacing existing header with new one
           const prefixDiff = style.prefix.length - existingPrefixLength
+          debugLog('insertHeader', `  - Replacing header, adjusting by ${prefixDiff}`);
           return {
             start: selStart + prefixDiff,
             end: selEnd + prefixDiff
           }
         } else {
           // Adding new header
+          debugLog('insertHeader', `  - Adding header, adjusting by +${style.prefix.length}`);
           return {
             start: selStart + style.prefix.length,
             end: selEnd + style.prefix.length
@@ -241,6 +269,9 @@ export function insertHeader(textarea, level = 1, toggle = false) {
       }
     }
   )
+  
+  debugLog('insertHeader', `Final result: text="${result.text}", cursor=${result.selectionStart}-${result.selectionEnd}`);
+  debugLog('insertHeader', `============ END ============`);
   
   insertText(textarea, result)
 }

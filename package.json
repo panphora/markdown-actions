@@ -1,6 +1,6 @@
 {
   "name": "markdown-actions",
-  "version": "1.0.6",
+  "version": "1.0.9",
   "description": "A lightweight, zero-dependency JavaScript library for adding markdown formatting functionality to any textarea element",
   "main": "dist/markdown-actions.js",
   "module": "dist/markdown-actions.esm.js",
