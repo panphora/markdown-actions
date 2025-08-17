@@ -115,3 +115,66 @@ export function preserveSelection(textarea, callback) {
   textarea.selectionEnd = end
   textarea.scrollTop = scrollTop
 }
+
+/**
+ * Apply a line-based operation with cursor preservation
+ * This function handles expanding to line boundaries and preserving cursor position
+ * @param {HTMLTextAreaElement} textarea - The textarea element
+ * @param {Function} operation - The operation to perform (receives textarea and returns result)
+ * @param {Object} options - Options for the operation
+ * @param {string} options.prefix - The prefix being added/removed (for cursor adjustment)
+ * @returns {Object} The result from the operation with adjusted cursor position
+ */
+export function applyLineOperation(textarea, operation, options = {}) {
+  // Save original cursor position before any expansion
+  const originalStart = textarea.selectionStart
+  const originalEnd = textarea.selectionEnd
+  const noInitialSelection = originalStart === originalEnd
+  
+  // Expand selection to line boundaries
+  if (noInitialSelection) {
+    // Expand to current line when no selection
+    const value = textarea.value
+    const start = originalStart
+    let lineStart = start
+    let lineEnd = start
+    
+    // Find start of current line
+    while (lineStart > 0 && value[lineStart - 1] !== '\n') {
+      lineStart--
+    }
+    
+    // Find end of current line
+    while (lineEnd < value.length && value[lineEnd] !== '\n') {
+      lineEnd++
+    }
+    
+    textarea.selectionStart = lineStart
+    textarea.selectionEnd = lineEnd
+  } else {
+    // For multiline selections, expand to full lines
+    expandSelectionToLine(textarea)
+  }
+  
+  // Apply the operation
+  const result = operation(textarea)
+  
+  // If there was no initial selection and we have a prefix, restore cursor position
+  if (noInitialSelection && options.prefix) {
+    // Check if we're toggling on or off
+    const selectedText = textarea.value.slice(textarea.selectionStart, textarea.selectionEnd)
+    const isRemoving = selectedText.startsWith(options.prefix)
+    
+    if (isRemoving) {
+      // When removing prefix, adjust cursor position
+      result.selectionStart = Math.max(originalStart - options.prefix.length, textarea.selectionStart)
+      result.selectionEnd = result.selectionStart
+    } else {
+      // When adding prefix, adjust cursor position
+      result.selectionStart = originalStart + options.prefix.length
+      result.selectionEnd = result.selectionStart
+    }
+  }
+  
+  return result
+}

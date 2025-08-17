@@ -102,7 +102,8 @@ export function styleSelectedText(textarea, style) {
 }
 
 /**
- * Apply multiline styling (quotes, etc)
+ * Apply multiline styling (quotes, task lists, etc)
+ * Note: This does NOT expand selection to line - that should be done by the caller if needed
  */
 export function multilineStyle(textarea, style) {
   const { prefix, suffix, surroundWithNewlines } = style

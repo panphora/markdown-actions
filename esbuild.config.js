@@ -10,7 +10,7 @@ const isWatch = process.argv.includes('--watch');
 
 // Common build options
 const commonOptions = {
-  entryPoints: ['src/index-new.js'],
+  entryPoints: ['src/index.js'],
   bundle: true,
   sourcemap: true,
   target: ['es2015'],

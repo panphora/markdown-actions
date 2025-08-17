@@ -5,19 +5,29 @@
 
 import { FORMATS, mergeWithDefaults } from './core/formats.js'
 import { insertText, setUndoMethod } from './core/insertion.js'
-import { preserveSelection, isMultipleLines } from './core/selection.js'
+import { preserveSelection, isMultipleLines, expandSelectionToLine, applyLineOperation } from './core/selection.js'
 import { blockStyle, multilineStyle } from './operations/block.js'
 import { applyListStyle } from './operations/list.js'
 import { getActiveFormats as getActive, hasFormat as has, expandSelection as expand } from './core/detection.js'
+import { debugLog, debugSelection, debugResult, setDebugMode, getDebugMode } from './debug.js'
 
 /**
  * Toggle bold formatting
  */
 export function toggleBold(textarea) {
   if (!textarea || textarea.disabled || textarea.readOnly) return
+  
+  debugLog('toggleBold', 'Starting');
+  debugSelection(textarea, 'Before');
+  
   const style = mergeWithDefaults(FORMATS.bold)
   const result = blockStyle(textarea, style)
+  
+  debugResult(result);
+  
   insertText(textarea, result)
+  
+  debugSelection(textarea, 'After');
 }
 
 /**
@@ -103,29 +113,66 @@ export function toggleNumberedList(textarea) {
 
 /**
  * Toggle quote formatting
+ * Matches GitHub's implementation for quotes
  */
 export function toggleQuote(textarea) {
   if (!textarea || textarea.disabled || textarea.readOnly) return
+  
+  debugLog('toggleQuote', 'Starting');
+  debugSelection(textarea, 'Initial');
+  
   const style = mergeWithDefaults(FORMATS.quote)
-  const result = multilineStyle(textarea, style)
+  
+  // Use the reusable line operation helper
+  const result = applyLineOperation(
+    textarea,
+    (ta) => multilineStyle(ta, style),
+    { prefix: style.prefix }
+  )
+  
+  debugResult(result);
+  insertText(textarea, result)
+  debugSelection(textarea, 'Final');
+}
+
+/**
+ * Toggle task list formatting
+ * Matches GitHub's implementation for task lists
+ */
+export function toggleTaskList(textarea) {
+  if (!textarea || textarea.disabled || textarea.readOnly) return
+  
+  const style = mergeWithDefaults(FORMATS.taskList)
+  
+  // Use the reusable line operation helper
+  const result = applyLineOperation(
+    textarea,
+    (ta) => multilineStyle(ta, style),
+    { prefix: style.prefix }
+  )
+  
   insertText(textarea, result)
 }
 
 /**
- * Insert header with specific level
+ * Insert or toggle header with specific level
  */
-export function insertHeader(textarea, level = 1) {
+export function insertHeader(textarea, level = 1, toggle = false) {
   if (!textarea || textarea.disabled || textarea.readOnly) return
   if (level < 1 || level > 6) level = 1
+  
+  // Save original cursor position before any expansion
+  const originalStart = textarea.selectionStart
+  const originalEnd = textarea.selectionEnd
+  const noInitialSelection = originalStart === originalEnd
   
   const headerKey = `header${level === 1 ? '1' : level}`
   const style = mergeWithDefaults(FORMATS[headerKey] || FORMATS.header1)
   
   // Select current line
   const value = textarea.value
-  const start = textarea.selectionStart
-  let lineStart = start
-  let lineEnd = start
+  let lineStart = originalStart
+  let lineEnd = originalStart
   
   // Find line boundaries
   while (lineStart > 0 && value[lineStart - 1] !== '\n') {
@@ -140,18 +187,99 @@ export function insertHeader(textarea, level = 1) {
   
   const currentLine = value.slice(lineStart, lineEnd)
   
+  // Check if we're removing or changing existing header
+  const existingHeaderMatch = currentLine.match(/^(#{1,6})\s*/)
+  const existingPrefixLength = existingHeaderMatch ? existingHeaderMatch[0].length : 0
+  const existingLevel = existingHeaderMatch ? existingHeaderMatch[1].length : 0
+  
   // Remove any existing header formatting
   const cleanedLine = currentLine.replace(/^#{1,6}\s*/, '')
   
-  // Apply new header
-  const newLine = style.prefix + cleanedLine
+  let newLine
+  let isRemoving = false
+  
+  // If toggle mode and current line has the same header level, remove it
+  if (toggle && existingLevel === level) {
+    newLine = cleanedLine
+    isRemoving = true
+  } else {
+    // Apply new header
+    newLine = style.prefix + cleanedLine
+  }
+  
+  let selectionStart, selectionEnd
+  
+  if (noInitialSelection) {
+    // Calculate where cursor should be after the operation
+    const cursorOffsetInLine = originalStart - lineStart
+    
+    if (isRemoving) {
+      // We're removing the header
+      if (cursorOffsetInLine < existingPrefixLength) {
+        // Cursor was in the header prefix, move to start of line
+        selectionStart = lineStart
+      } else {
+        // Cursor was in the text, move back by prefix length
+        selectionStart = originalStart - existingPrefixLength
+      }
+    } else if (existingPrefixLength > 0) {
+      // We're replacing an existing header
+      if (cursorOffsetInLine < existingPrefixLength) {
+        // Cursor was in the header prefix, keep it at the same position
+        selectionStart = lineStart + Math.min(cursorOffsetInLine, style.prefix.length)
+      } else {
+        // Cursor was in the text, adjust by the difference in prefix lengths
+        const prefixDiff = style.prefix.length - existingPrefixLength
+        selectionStart = originalStart + prefixDiff
+      }
+    } else {
+      // We're adding a new header
+      // Move cursor by the length of the new prefix
+      selectionStart = originalStart + style.prefix.length
+    }
+    
+    // Ensure cursor doesn't go past end of line
+    selectionStart = Math.min(selectionStart, lineStart + newLine.length)
+    selectionEnd = selectionStart
+  } else {
+    // Keep selection if there was one
+    if (isRemoving) {
+      selectionStart = lineStart
+      selectionEnd = lineStart + newLine.length
+    } else {
+      selectionStart = lineStart + style.prefix.length
+      selectionEnd = lineStart + newLine.length
+    }
+  }
+  
   const result = {
     text: newLine,
-    selectionStart: lineStart + style.prefix.length,
-    selectionEnd: lineStart + newLine.length
+    selectionStart,
+    selectionEnd
   }
   
   insertText(textarea, result)
+}
+
+/**
+ * Toggle H1 header
+ */
+export function toggleH1(textarea) {
+  insertHeader(textarea, 1, true)
+}
+
+/**
+ * Toggle H2 header
+ */
+export function toggleH2(textarea) {
+  insertHeader(textarea, 2, true)
+}
+
+/**
+ * Toggle H3 header
+ */
+export function toggleH3(textarea) {
+  insertHeader(textarea, 3, true)
 }
 
 /**
@@ -209,6 +337,11 @@ export { preserveSelection }
 export { setUndoMethod }
 
 /**
+ * Debug mode control
+ */
+export { setDebugMode, getDebugMode }
+
+/**
  * Default export with all functions
  */
 export default {
@@ -219,11 +352,17 @@ export default {
   toggleBulletList,
   toggleNumberedList,
   toggleQuote,
+  toggleTaskList,
   insertHeader,
+  toggleH1,
+  toggleH2,
+  toggleH3,
   getActiveFormats,
   hasFormat,
   expandSelection,
   applyCustomFormat,
   preserveSelection,
-  setUndoMethod
+  setUndoMethod,
+  setDebugMode,
+  getDebugMode
 }

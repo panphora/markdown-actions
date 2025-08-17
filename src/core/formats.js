@@ -40,6 +40,11 @@ export const FORMATS = {
     multiline: true,
     surroundWithNewlines: true
   },
+  taskList: {
+    prefix: '- [ ] ',
+    multiline: true,
+    surroundWithNewlines: true
+  },
   header1: { prefix: '# ' },
   header2: { prefix: '## ' },
   header3: { prefix: '### ' },
