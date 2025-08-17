@@ -123,26 +123,28 @@ export function preserveSelection(textarea, callback) {
  * @param {Function} operation - The operation to perform (receives textarea and returns result)
  * @param {Object} options - Options for the operation
  * @param {string} options.prefix - The prefix being added/removed (for cursor adjustment)
+ * @param {Function} options.adjustSelection - Custom selection adjustment function
  * @returns {Object} The result from the operation with adjusted cursor position
  */
 export function applyLineOperation(textarea, operation, options = {}) {
-  // Save original cursor position before any expansion
+  // Save original cursor position AND selection before any expansion
   const originalStart = textarea.selectionStart
   const originalEnd = textarea.selectionEnd
   const noInitialSelection = originalStart === originalEnd
   
-  // Expand selection to line boundaries
+  // Store the line start position to calculate offset later
+  const value = textarea.value
+  let lineStart = originalStart
+  
+  // Find start of the line containing the selection start
+  while (lineStart > 0 && value[lineStart - 1] !== '\n') {
+    lineStart--
+  }
+  
+  // Expand selection to line boundaries for the operation
   if (noInitialSelection) {
     // Expand to current line when no selection
-    const value = textarea.value
-    const start = originalStart
-    let lineStart = start
-    let lineEnd = start
-    
-    // Find start of current line
-    while (lineStart > 0 && value[lineStart - 1] !== '\n') {
-      lineStart--
-    }
+    let lineEnd = originalStart
     
     // Find end of current line
     while (lineEnd < value.length && value[lineEnd] !== '\n') {
@@ -152,27 +154,48 @@ export function applyLineOperation(textarea, operation, options = {}) {
     textarea.selectionStart = lineStart
     textarea.selectionEnd = lineEnd
   } else {
-    // For multiline selections, expand to full lines
+    // For selections, expand to full lines
     expandSelectionToLine(textarea)
   }
   
   // Apply the operation
   const result = operation(textarea)
   
-  // If there was no initial selection and we have a prefix, restore cursor position
-  if (noInitialSelection && options.prefix) {
-    // Check if we're toggling on or off
+  // Restore original selection/cursor with prefix adjustment
+  if (options.adjustSelection) {
+    // Use custom selection adjustment logic
+    const selectedText = textarea.value.slice(textarea.selectionStart, textarea.selectionEnd)
+    const isRemoving = selectedText.startsWith(options.prefix)
+    const adjusted = options.adjustSelection(isRemoving, originalStart, originalEnd, lineStart)
+    result.selectionStart = adjusted.start
+    result.selectionEnd = adjusted.end
+  } else if (options.prefix) {
+    // Use default prefix-based adjustment
     const selectedText = textarea.value.slice(textarea.selectionStart, textarea.selectionEnd)
     const isRemoving = selectedText.startsWith(options.prefix)
     
-    if (isRemoving) {
-      // When removing prefix, adjust cursor position
-      result.selectionStart = Math.max(originalStart - options.prefix.length, textarea.selectionStart)
-      result.selectionEnd = result.selectionStart
+    if (noInitialSelection) {
+      // No selection - just restore cursor position
+      if (isRemoving) {
+        // When removing prefix, adjust cursor position
+        result.selectionStart = Math.max(originalStart - options.prefix.length, lineStart)
+        result.selectionEnd = result.selectionStart
+      } else {
+        // When adding prefix, adjust cursor position
+        result.selectionStart = originalStart + options.prefix.length
+        result.selectionEnd = result.selectionStart
+      }
     } else {
-      // When adding prefix, adjust cursor position
-      result.selectionStart = originalStart + options.prefix.length
-      result.selectionEnd = result.selectionStart
+      // Had a selection - restore it with adjustment
+      if (isRemoving) {
+        // When removing prefix, shift selection back
+        result.selectionStart = Math.max(originalStart - options.prefix.length, lineStart)
+        result.selectionEnd = Math.max(originalEnd - options.prefix.length, lineStart)
+      } else {
+        // When adding prefix, shift selection forward
+        result.selectionStart = originalStart + options.prefix.length
+        result.selectionEnd = originalEnd + options.prefix.length
+      }
     }
   }
   

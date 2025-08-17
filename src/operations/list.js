@@ -2,7 +2,7 @@
  * List operations for bullet and numbered lists
  */
 
-import { expandSelectionToLine, newlinesToSurroundSelectedText } from '../core/selection.js'
+import { expandSelectionToLine, newlinesToSurroundSelectedText, applyLineOperation } from '../core/selection.js'
 import { insertText } from '../core/insertion.js'
 
 /**
@@ -139,14 +139,83 @@ export function listStyle(textarea, style) {
  * Apply list style to textarea
  */
 export function applyListStyle(textarea, style) {
-  // Save the original selection boundaries before expansion
-  const originalStart = textarea.selectionStart
-  const originalEnd = textarea.selectionEnd
+  // Use applyLineOperation for consistent selection preservation
+  const result = applyLineOperation(
+    textarea,
+    (ta) => listStyle(ta, style),
+    {
+      // Custom selection adjustment for lists
+      adjustSelection: (isRemoving, selStart, selEnd, lineStart) => {
+        // Get the current line to check if we're removing
+        const currentLine = textarea.value.slice(lineStart, textarea.selectionEnd)
+        const orderedListRegex = /^\d+\.\s+/
+        const unorderedListRegex = /^- /
+        
+        // Check if we're removing a list
+        const hasOrderedList = orderedListRegex.test(currentLine)
+        const hasUnorderedList = unorderedListRegex.test(currentLine)
+        const isRemovingCurrent = (style.orderedList && hasOrderedList) || (style.unorderedList && hasUnorderedList)
+        
+        if (selStart === selEnd) {
+          // No selection - cursor position
+          if (isRemovingCurrent) {
+            // Removing list - adjust cursor back
+            const prefixMatch = currentLine.match(style.orderedList ? orderedListRegex : unorderedListRegex)
+            const prefixLength = prefixMatch ? prefixMatch[0].length : 0
+            return {
+              start: Math.max(selStart - prefixLength, lineStart),
+              end: Math.max(selStart - prefixLength, lineStart)
+            }
+          } else if (hasOrderedList || hasUnorderedList) {
+            // Converting from one list type to another
+            const oldPrefixMatch = currentLine.match(hasOrderedList ? orderedListRegex : unorderedListRegex)
+            const oldPrefixLength = oldPrefixMatch ? oldPrefixMatch[0].length : 0
+            const newPrefixLength = style.unorderedList ? 2 : 3 // "- " or "1. "
+            const adjustment = newPrefixLength - oldPrefixLength
+            return {
+              start: selStart + adjustment,
+              end: selStart + adjustment
+            }
+          } else {
+            // Adding new list
+            const prefixLength = style.unorderedList ? 2 : 3 // "- " or "1. "
+            return {
+              start: selStart + prefixLength,
+              end: selStart + prefixLength
+            }
+          }
+        } else {
+          // Has selection - preserve it
+          if (isRemovingCurrent) {
+            // Removing current list type
+            const prefixMatch = currentLine.match(style.orderedList ? orderedListRegex : unorderedListRegex)
+            const prefixLength = prefixMatch ? prefixMatch[0].length : 0
+            return {
+              start: Math.max(selStart - prefixLength, lineStart),
+              end: Math.max(selEnd - prefixLength, lineStart)
+            }
+          } else if (hasOrderedList || hasUnorderedList) {
+            // Converting from one list type to another
+            const oldPrefixMatch = currentLine.match(hasOrderedList ? orderedListRegex : unorderedListRegex)
+            const oldPrefixLength = oldPrefixMatch ? oldPrefixMatch[0].length : 0
+            const newPrefixLength = style.unorderedList ? 2 : 3 // "- " or "1. "
+            const adjustment = newPrefixLength - oldPrefixLength
+            return {
+              start: selStart + adjustment,
+              end: selEnd + adjustment
+            }
+          } else {
+            // Adding new list
+            const prefixLength = style.unorderedList ? 2 : 3 // "- " or "1. "
+            return {
+              start: selStart + prefixLength,
+              end: selEnd + prefixLength
+            }
+          }
+        }
+      }
+    }
+  )
   
-  // Get the result which includes expandSelectionToLine
-  const result = listStyle(textarea, style)
-  
-  // At this point, textarea selection has been expanded to full line(s)
-  // insertText will use the current (expanded) selection to know what to replace
   insertText(textarea, result)
 }

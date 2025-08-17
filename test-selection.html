@@ -2,80 +2,114 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Test expandSelectionToLine</title>
+  <title>Selection Preservation Test</title>
+  <style>
+    body {
+      font-family: system-ui, sans-serif;
+      max-width: 800px;
+      margin: 40px auto;
+      padding: 20px;
+    }
+    textarea {
+      width: 100%;
+      height: 300px;
+      font-family: monospace;
+      margin: 10px 0;
+      font-size: 14px;
+    }
+    button {
+      padding: 8px 16px;
+      margin: 5px;
+      cursor: pointer;
+    }
+    .info {
+      background: #f0f0f0;
+      padding: 10px;
+      margin: 10px 0;
+      font-family: monospace;
+    }
+  </style>
 </head>
 <body>
-  <h1>Test expandSelectionToLine</h1>
-  <textarea id="test">Format toggling</textarea>
+  <h1>Selection Preservation Test</h1>
+  <p>Select a word (like "word" or "test") and click any button. The selection should remain after the operation.</p>
+  
+  <textarea id="editor">This is a test line with some words to select.
+Try selecting a single word and clicking a button.
+The selection should remain after applying the style.</textarea>
+  
+  <div>
+    <button id="h1">H1</button>
+    <button id="h2">H2</button>
+    <button id="h3">H3</button>
+    <button id="quote">Quote</button>
+    <button id="bullet">Bullet List</button>
+    <button id="numbered">Numbered List</button>
+    <button id="task">Task List</button>
+  </div>
+  
+  <div class="info">
+    Selection: <span id="selection">None</span><br>
+    Position: <span id="position">0-0</span>
+  </div>
   
   <script type="module">
-    // Inline version of expandSelectionToLine for testing
-    function expandSelectionToLine(textarea) {
-      const lines = textarea.value.split('\n')
-      let counter = 0
-      console.log('Lines:', lines)
-      console.log('Initial selection:', textarea.selectionStart, '-', textarea.selectionEnd)
+    import * as markdownActions from './dist/markdown-actions.esm.js';
+    
+    const textarea = document.getElementById('editor');
+    const selectionSpan = document.getElementById('selection');
+    const positionSpan = document.getElementById('position');
+    
+    function updateSelectionInfo() {
+      const start = textarea.selectionStart;
+      const end = textarea.selectionEnd;
+      const selected = textarea.value.slice(start, end);
       
-      for (let index = 0; index < lines.length; index++) {
-        const lineLength = lines[index].length + 1
-        console.log(`Line ${index}: "${lines[index]}", counter=${counter}, lineLength=${lineLength}`)
-        
-        if (textarea.selectionStart >= counter && textarea.selectionStart < counter + lineLength) {
-          console.log(`  Setting selectionStart to ${counter}`)
-          textarea.selectionStart = counter
-        }
-        if (textarea.selectionEnd >= counter && textarea.selectionEnd < counter + lineLength) {
-          const newEnd = counter + lineLength - 1
-          console.log(`  Setting selectionEnd to ${newEnd}`)
-          textarea.selectionEnd = newEnd
-        }
-        counter += lineLength
-      }
-      
-      console.log('Final selection:', textarea.selectionStart, '-', textarea.selectionEnd)
-      console.log('Selected text:', textarea.value.slice(textarea.selectionStart, textarea.selectionEnd))
+      selectionSpan.textContent = selected || 'None';
+      positionSpan.textContent = `${start}-${end}`;
     }
     
-    const textarea = document.getElementById('test')
+    textarea.addEventListener('select', updateSelectionInfo);
+    textarea.addEventListener('click', updateSelectionInfo);
+    textarea.addEventListener('keyup', updateSelectionInfo);
     
-    // Test 1: Cursor at position 0
-    console.log('\n=== Test 1: Cursor at start ===')
-    textarea.selectionStart = 0
-    textarea.selectionEnd = 0
-    expandSelectionToLine(textarea)
+    document.getElementById('h1').addEventListener('click', () => {
+      markdownActions.toggleH1(textarea);
+      updateSelectionInfo();
+    });
     
-    // Reset
-    textarea.value = 'Format toggling'
+    document.getElementById('h2').addEventListener('click', () => {
+      markdownActions.toggleH2(textarea);
+      updateSelectionInfo();
+    });
     
-    // Test 2: Cursor in middle
-    console.log('\n=== Test 2: Cursor in middle ===')
-    textarea.selectionStart = 7
-    textarea.selectionEnd = 7
-    expandSelectionToLine(textarea)
+    document.getElementById('h3').addEventListener('click', () => {
+      markdownActions.toggleH3(textarea);
+      updateSelectionInfo();
+    });
     
-    // Reset
-    textarea.value = 'Format toggling'
+    document.getElementById('quote').addEventListener('click', () => {
+      markdownActions.toggleQuote(textarea);
+      updateSelectionInfo();
+    });
     
-    // Test 3: Text selected
-    console.log('\n=== Test 3: Text selected ===')
-    textarea.selectionStart = 0
-    textarea.selectionEnd = 6
-    expandSelectionToLine(textarea)
+    document.getElementById('bullet').addEventListener('click', () => {
+      markdownActions.toggleBulletList(textarea);
+      updateSelectionInfo();
+    });
     
-    // For single line, the final selection should be 0 to 15 (length of "Format toggling")
-    // But we're setting it to counter + lineLength - 1
-    // For a single line: counter = 0, lineLength = 15 + 1 = 16
-    // So selectionEnd = 0 + 16 - 1 = 15
-    // That's correct!
+    document.getElementById('numbered').addEventListener('click', () => {
+      markdownActions.toggleNumberedList(textarea);
+      updateSelectionInfo();
+    });
     
-    // Test with actual list operation
-    console.log('\n=== Test with list prefix ===')
-    textarea.value = '- Format toggling'
-    textarea.selectionStart = 2 // After "- "
-    textarea.selectionEnd = 2
-    expandSelectionToLine(textarea)
+    document.getElementById('task').addEventListener('click', () => {
+      markdownActions.toggleTaskList(textarea);
+      updateSelectionInfo();
+    });
     
-    // Should select the whole line: 0 to 17
+    // Initial update
+    updateSelectionInfo();
   </script>
 </body>
 </html>

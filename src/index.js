@@ -45,23 +45,10 @@ export function toggleItalic(textarea) {
  */
 export function toggleCode(textarea) {
   if (!textarea || textarea.disabled || textarea.readOnly) return
-  const selectedText = textarea.value.slice(textarea.selectionStart, textarea.selectionEnd)
+  
+  // blockStyle already handles both inline and block code correctly
   const style = mergeWithDefaults(FORMATS.code)
-  
-  // Use block style for single line, multiline style for multiple lines
-  let result
-  if (isMultipleLines(selectedText)) {
-    // For multiline, we want code blocks
-    const blockStyle = {
-      prefix: '```\n',
-      suffix: '\n```',
-      surroundWithNewlines: true
-    }
-    result = multilineStyle(textarea, mergeWithDefaults(blockStyle))
-  } else {
-    result = blockStyle(textarea, style)
-  }
-  
+  const result = blockStyle(textarea, style)
   insertText(textarea, result)
 }
 
@@ -74,8 +61,16 @@ export function insertLink(textarea, options = {}) {
   const selectedText = textarea.value.slice(textarea.selectionStart, textarea.selectionEnd)
   let style = mergeWithDefaults(FORMATS.link)
   
-  // Override with custom URL if provided
-  if (options.url) {
+  // Check if selected text is a URL
+  const isURL = selectedText && selectedText.match(/^https?:\/\//)
+  
+  if (isURL && !options.url) {
+    // If selected text is a URL, use it as both link text and URL
+    style.suffix = `](${selectedText})`
+    style.replaceNext = ''
+    // Don't change the selected text, it becomes the link text
+  } else if (options.url) {
+    // Override with custom URL if provided
     style.suffix = `](${options.url})`
     style.replaceNext = ''
   }
@@ -161,102 +156,77 @@ export function insertHeader(textarea, level = 1, toggle = false) {
   if (!textarea || textarea.disabled || textarea.readOnly) return
   if (level < 1 || level > 6) level = 1
   
-  // Save original cursor position before any expansion
-  const originalStart = textarea.selectionStart
-  const originalEnd = textarea.selectionEnd
-  const noInitialSelection = originalStart === originalEnd
-  
   const headerKey = `header${level === 1 ? '1' : level}`
   const style = mergeWithDefaults(FORMATS[headerKey] || FORMATS.header1)
   
-  // Select current line
-  const value = textarea.value
-  let lineStart = originalStart
-  let lineEnd = originalStart
+  // Save original positions before any operations
+  const originalStart = textarea.selectionStart
+  const originalEnd = textarea.selectionEnd
   
-  // Find line boundaries
-  while (lineStart > 0 && value[lineStart - 1] !== '\n') {
-    lineStart--
-  }
-  while (lineEnd < value.length && value[lineEnd] !== '\n') {
-    lineEnd++
-  }
-  
-  textarea.selectionStart = lineStart
-  textarea.selectionEnd = lineEnd
-  
-  const currentLine = value.slice(lineStart, lineEnd)
-  
-  // Check if we're removing or changing existing header
-  const existingHeaderMatch = currentLine.match(/^(#{1,6})\s*/)
-  const existingPrefixLength = existingHeaderMatch ? existingHeaderMatch[0].length : 0
-  const existingLevel = existingHeaderMatch ? existingHeaderMatch[1].length : 0
-  
-  // Remove any existing header formatting
-  const cleanedLine = currentLine.replace(/^#{1,6}\s*/, '')
-  
-  let newLine
-  let isRemoving = false
-  
-  // If toggle mode and current line has the same header level, remove it
-  if (toggle && existingLevel === level) {
-    newLine = cleanedLine
-    isRemoving = true
-  } else {
-    // Apply new header
-    newLine = style.prefix + cleanedLine
-  }
-  
-  let selectionStart, selectionEnd
-  
-  if (noInitialSelection) {
-    // Calculate where cursor should be after the operation
-    const cursorOffsetInLine = originalStart - lineStart
-    
-    if (isRemoving) {
-      // We're removing the header
-      if (cursorOffsetInLine < existingPrefixLength) {
-        // Cursor was in the header prefix, move to start of line
-        selectionStart = lineStart
+  // Use applyLineOperation for consistent behavior
+  const result = applyLineOperation(
+    textarea,
+    (ta) => {
+      const currentLine = ta.value.slice(ta.selectionStart, ta.selectionEnd)
+      
+      // Check if we're removing or changing existing header
+      const existingHeaderMatch = currentLine.match(/^(#{1,6})\s*/)
+      const existingLevel = existingHeaderMatch ? existingHeaderMatch[1].length : 0
+      
+      // Remove any existing header formatting
+      const cleanedLine = currentLine.replace(/^#{1,6}\s*/, '')
+      
+      let newLine
+      
+      // If toggle mode and current line has the same header level, remove it
+      if (toggle && existingLevel === level) {
+        newLine = cleanedLine
       } else {
-        // Cursor was in the text, move back by prefix length
-        selectionStart = originalStart - existingPrefixLength
+        // Apply new header
+        newLine = style.prefix + cleanedLine
       }
-    } else if (existingPrefixLength > 0) {
-      // We're replacing an existing header
-      if (cursorOffsetInLine < existingPrefixLength) {
-        // Cursor was in the header prefix, keep it at the same position
-        selectionStart = lineStart + Math.min(cursorOffsetInLine, style.prefix.length)
-      } else {
-        // Cursor was in the text, adjust by the difference in prefix lengths
-        const prefixDiff = style.prefix.length - existingPrefixLength
-        selectionStart = originalStart + prefixDiff
+      
+      return {
+        text: newLine,
+        selectionStart: ta.selectionStart,
+        selectionEnd: ta.selectionEnd
       }
-    } else {
-      // We're adding a new header
-      // Move cursor by the length of the new prefix
-      selectionStart = originalStart + style.prefix.length
+    },
+    {
+      prefix: style.prefix,
+      // Custom handler for header-specific logic
+      adjustSelection: (isRemoving, selStart, selEnd, lineStart) => {
+        const currentLine = textarea.value.slice(lineStart, textarea.selectionEnd)
+        const existingHeaderMatch = currentLine.match(/^(#{1,6})\s*/)
+        const existingPrefixLength = existingHeaderMatch ? existingHeaderMatch[0].length : 0
+        const existingLevel = existingHeaderMatch ? existingHeaderMatch[1].length : 0
+        
+        // Check if we're actually removing (toggle off)
+        const actuallyRemoving = toggle && existingLevel === level
+        
+        if (actuallyRemoving) {
+          // Removing the header entirely
+          return {
+            start: Math.max(selStart - existingPrefixLength, lineStart),
+            end: Math.max(selEnd - existingPrefixLength, lineStart)
+          }
+        } else if (existingPrefixLength > 0) {
+          // Replacing existing header with new one
+          const prefixDiff = style.prefix.length - existingPrefixLength
+          return {
+            start: selStart + prefixDiff,
+            end: selEnd + prefixDiff
+          }
+        } else {
+          // Adding new header
+          return {
+            start: selStart + style.prefix.length,
+            end: selEnd + style.prefix.length
+          }
+        }
+      }
     }
-    
-    // Ensure cursor doesn't go past end of line
-    selectionStart = Math.min(selectionStart, lineStart + newLine.length)
-    selectionEnd = selectionStart
-  } else {
-    // Keep selection if there was one
-    if (isRemoving) {
-      selectionStart = lineStart
-      selectionEnd = lineStart + newLine.length
-    } else {
-      selectionStart = lineStart + style.prefix.length
-      selectionEnd = lineStart + newLine.length
-    }
-  }
-  
-  const result = {
-    text: newLine,
-    selectionStart,
-    selectionEnd
-  }
+  )
   
   insertText(textarea, result)
 }
