@@ -304,21 +304,25 @@ Open `test.html` in a browser to run the comprehensive test suite with 38 test c
 
 ## 📦 Installation
 
-Currently, this is a standalone library. To use it:
-
-1. Copy the `markdown-actions` folder to your project
-2. Import the functions you need:
-
-```javascript
-import { toggleBold, toggleItalic } from './markdown-actions/src/index.js'
-```
-
-### Future npm Package
-
 ```bash
-# Coming soon
 npm install markdown-actions
 ```
+
+Then import the functions you need:
+
+```javascript
+import { toggleBold, toggleItalic } from 'markdown-actions'
+```
+
+## ⚠️ Known Limitations
+
+### Code Block Detection
+Code format detection (`getActiveFormats`) currently has limitations with multi-line code blocks:
+- Detection works reliably for inline code (`` `code` ``) 
+- Detection inside code blocks (` ```code blocks``` `) is inconsistent
+- The toggle functionality works correctly, but toolbar highlighting may be unreliable
+
+**Workaround**: Consider disabling code format detection in toolbar implementations until this is resolved.
 
 ## 🤝 Contributing
 

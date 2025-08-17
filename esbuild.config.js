@@ -18,20 +18,26 @@ const commonOptions = {
 
 // Build configurations
 const builds = [
-  // ESM build (for modern bundlers and ES modules)
+  // ESM build (for modern bundlers and ES modules - keeps debug for development)
   {
     ...commonOptions,
     format: 'esm',
     outfile: 'dist/markdown-actions.esm.js',
+    define: {
+      'process.env.NODE_ENV': '"development"'
+    }
   },
-  // UMD build (for script tags and CommonJS)
+  // UMD build (for script tags and CommonJS - keeps debug for development)
   {
     ...commonOptions,
     format: 'iife',
     globalName: 'markdownActions',
     outfile: 'dist/markdown-actions.js',
+    define: {
+      'process.env.NODE_ENV': '"development"'
+    }
   },
-  // Minified UMD build
+  // Minified UMD build (production - strips debug)
   {
     ...commonOptions,
     format: 'iife',
@@ -39,6 +45,10 @@ const builds = [
     outfile: 'dist/markdown-actions.min.js',
     minify: true,
     sourcemap: false,
+    define: {
+      'process.env.NODE_ENV': '"production"'
+    },
+    drop: ['debugger', 'console']
   },
 ];
 

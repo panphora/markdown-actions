@@ -23,6 +23,7 @@ export function getDebugMode() {
 }
 
 export function debugLog(funcName, message, data) {
+  // These will be completely removed by esbuild's drop: ['console'] in production
   if (!debugMode) return;
   
   console.group(`🔍 ${funcName}`);
@@ -34,6 +35,7 @@ export function debugLog(funcName, message, data) {
 }
 
 export function debugSelection(textarea, label) {
+  // These will be completely removed by esbuild's drop: ['console'] in production
   if (!debugMode) return;
   
   const selected = textarea.value.slice(textarea.selectionStart, textarea.selectionEnd);
@@ -50,6 +52,7 @@ export function debugSelection(textarea, label) {
 }
 
 export function debugResult(result) {
+  // These will be completely removed by esbuild's drop: ['console'] in production
   if (!debugMode) return;
   
   console.group('📝 Result');
