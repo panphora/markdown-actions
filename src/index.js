@@ -298,6 +298,27 @@ export function toggleH3(textarea) {
 }
 
 /**
+ * Toggle H4 header
+ */
+export function toggleH4(textarea) {
+  insertHeader(textarea, 4, true)
+}
+
+/**
+ * Toggle H5 header
+ */
+export function toggleH5(textarea) {
+  insertHeader(textarea, 5, true)
+}
+
+/**
+ * Toggle H6 header
+ */
+export function toggleH6(textarea) {
+  insertHeader(textarea, 6, true)
+}
+
+/**
  * Get active formats at cursor position
  */
 export function getActiveFormats(textarea) {
@@ -372,6 +393,9 @@ export default {
   toggleH1,
   toggleH2,
   toggleH3,
+  toggleH4,
+  toggleH5,
+  toggleH6,
   getActiveFormats,
   hasFormat,
   expandSelection,
