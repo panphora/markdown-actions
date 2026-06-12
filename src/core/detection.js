@@ -59,6 +59,9 @@ export function getActiveFormats(textarea) {
   if (currentLine.startsWith('# ')) formats.push('header')
   if (currentLine.startsWith('## ')) formats.push('header-2')
   if (currentLine.startsWith('### ')) formats.push('header-3')
+  if (currentLine.startsWith('#### ')) formats.push('header-4')
+  if (currentLine.startsWith('##### ')) formats.push('header-5')
+  if (currentLine.startsWith('###### ')) formats.push('header-6')
   
   // Check inline formats by looking around cursor
   const lookBehind = Math.max(0, selectionStart - 10)
