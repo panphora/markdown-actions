@@ -16,6 +16,7 @@ import { getActiveFormats as getActive, hasFormat as has } from './core/detectio
 const FORMATS = {
   bold: { prefix: '**', suffix: '**', trimFirst: true },
   italic: { prefix: '_', suffix: '_', trimFirst: true },
+  strikethrough: { prefix: '~~', suffix: '~~', trimFirst: true },
   code: { 
     prefix: '`', 
     suffix: '`', 
@@ -75,6 +76,14 @@ export function toggleBold(textarea) {
 export function toggleItalic(textarea) {
   if (!textarea || textarea.disabled || textarea.readOnly) return
   applyStyle(textarea, FORMATS.italic)
+}
+
+/**
+ * Toggle strikethrough formatting
+ */
+export function toggleStrikethrough(textarea) {
+  if (!textarea || textarea.disabled || textarea.readOnly) return
+  applyStyle(textarea, FORMATS.strikethrough)
 }
 
 /**
@@ -245,6 +254,7 @@ export { setUndoMethod }
 export default {
   toggleBold,
   toggleItalic,
+  toggleStrikethrough,
   toggleCode,
   insertLink,
   toggleBulletList,

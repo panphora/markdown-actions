@@ -86,6 +86,17 @@ export function getActiveFormats(textarea) {
       formats.push('italic')
     }
   }
+
+  // Check for strikethrough
+  if (surrounding.includes('~~')) {
+    const beforeCursor = value.slice(Math.max(0, selectionStart - 100), selectionStart)
+    const afterCursor = value.slice(selectionEnd, Math.min(value.length, selectionEnd + 100))
+    const lastOpenStrikethrough = beforeCursor.lastIndexOf('~~')
+    const nextCloseStrikethrough = afterCursor.indexOf('~~')
+    if (lastOpenStrikethrough !== -1 && nextCloseStrikethrough !== -1) {
+      formats.push('strikethrough')
+    }
+  }
   
   // Check for code
   if (surrounding.includes('`')) {
