@@ -41,6 +41,16 @@ export function toggleItalic(textarea) {
 }
 
 /**
+ * Toggle strikethrough formatting
+ */
+export function toggleStrikethrough(textarea) {
+  if (!textarea || textarea.disabled || textarea.readOnly) return
+  const style = mergeWithDefaults(FORMATS.strikethrough)
+  const result = blockStyle(textarea, style)
+  insertText(textarea, result)
+}
+
+/**
  * Toggle code formatting
  */
 export function toggleCode(textarea) {
@@ -362,6 +372,7 @@ export { setDebugMode, getDebugMode }
 export default {
   toggleBold,
   toggleItalic,
+  toggleStrikethrough,
   toggleCode,
   insertLink,
   toggleBulletList,

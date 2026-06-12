@@ -51,6 +51,7 @@ All functions take a `HTMLTextAreaElement` as their first parameter:
 ```javascript
 toggleBold(textarea)           // **text**
 toggleItalic(textarea)         // _text_
+toggleStrikethrough(textarea)  // ~~text~~
 toggleCode(textarea)           // `code` or ```block```
 toggleQuote(textarea)          // > quote
 toggleBulletList(textarea)     // - item

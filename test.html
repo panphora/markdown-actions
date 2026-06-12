@@ -341,6 +341,39 @@
         runner.assert(textarea.value.includes('_') && textarea.value.includes('**'))
       })
     })
+
+    // ============= STRIKETHROUGH TESTS =============
+    runner.suite('Strikethrough Formatting', () => {
+      runner.test('Should wrap selected text in strikethrough markers', (textarea) => {
+        textarea.value = 'Hello world'
+        textarea.selectionStart = 6
+        textarea.selectionEnd = 11
+        
+        md.toggleStrikethrough(textarea)
+        
+        runner.assertEqual(textarea.value, 'Hello ~~world~~')
+      })
+      
+      runner.test('Should remove strikethrough markers when toggling off', (textarea) => {
+        textarea.value = 'Hello ~~world~~'
+        textarea.selectionStart = 8
+        textarea.selectionEnd = 13
+        
+        md.toggleStrikethrough(textarea)
+        
+        runner.assertEqual(textarea.value, 'Hello world')
+      })
+      
+      runner.test('Should insert strikethrough markers at cursor when no selection', (textarea) => {
+        textarea.value = 'Hello world'
+        textarea.selectionStart = 6
+        textarea.selectionEnd = 6
+        
+        md.toggleStrikethrough(textarea)
+        
+        runner.assertEqual(textarea.value, 'Hello ~~world~~')
+      })
+    })
     
     // ============= LINK TESTS =============
     runner.suite('Link Insertion', () => {
@@ -592,6 +625,15 @@
         
         const formats = md.getActiveFormats(textarea)
         runner.assert(formats.includes('italic'), 'Should detect italic')
+      })
+      
+      runner.test('Should detect strikethrough format', (textarea) => {
+        textarea.value = 'Hello ~~world~~ today'
+        textarea.selectionStart = 10
+        textarea.selectionEnd = 10
+        
+        const formats = md.getActiveFormats(textarea)
+        runner.assert(formats.includes('strikethrough'), 'Should detect strikethrough')
       })
       
       runner.test('Should detect list formats', (textarea) => {
