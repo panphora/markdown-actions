@@ -28,11 +28,11 @@ function undoOrderedListStyle(text) {
  */
 function undoUnorderedListStyle(text) {
   const lines = text.split('\n')
-  const unorderedListPrefix = '- '
-  const shouldUndoUnorderedList = lines.every(line => line.startsWith(unorderedListPrefix))
+  const unorderedListRegex = /^[-*+] /
+  const shouldUndoUnorderedList = lines.every(line => unorderedListRegex.test(line))
   let result = lines
   if (shouldUndoUnorderedList) {
-    result = lines.map(line => line.slice(unorderedListPrefix.length))
+    result = lines.map(line => line.replace(unorderedListRegex, ''))
   }
 
   return {
@@ -44,9 +44,9 @@ function undoUnorderedListStyle(text) {
 /**
  * Make prefix for list item
  */
-function makePrefix(index, unorderedList) {
+function makePrefix(index, unorderedList, bulletMarker = '-') {
   if (unorderedList) {
-    return '- '
+    return `${bulletMarker} `
   } else {
     return `${index + 1}. `
   }
@@ -90,7 +90,7 @@ export function listStyle(textarea, style) {
   const [undoResult, undoResultOppositeList, pristineText] = clearExistingListStyle(style, selectedText)
 
   const prefixedLines = pristineText.split('\n').map((value, index) => {
-    return `${makePrefix(index, style.unorderedList)}${value}`
+    return `${makePrefix(index, style.unorderedList, style.bulletMarker)}${value}`
   })
 
   const totalPrefixLength = prefixedLines.reduce((previousValue, _currentValue, currentIndex) => {
@@ -149,7 +149,7 @@ export function applyListStyle(textarea, style) {
         // Get the current line to check if we're removing
         const currentLine = textarea.value.slice(lineStart, textarea.selectionEnd)
         const orderedListRegex = /^\d+\.\s+/
-        const unorderedListRegex = /^- /
+        const unorderedListRegex = /^[-*+] /
         
         // Check if we're removing a list
         const hasOrderedList = orderedListRegex.test(currentLine)

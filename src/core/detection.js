@@ -40,8 +40,8 @@ export function getActiveFormats(textarea) {
   }
   
   // Check line-based formats
-  if (currentLine.startsWith('- ')) {
-    if (currentLine.startsWith('- [ ] ') || currentLine.startsWith('- [x] ')) {
+  if (/^[-*+] /.test(currentLine)) {
+    if (/^[-*+] \[[ xX]\] /.test(currentLine)) {
       formats.push('task-list')
     } else {
       formats.push('bullet-list')
@@ -66,25 +66,21 @@ export function getActiveFormats(textarea) {
   const surrounding = value.slice(lookBehind, lookAhead)
   
   // Check for bold
-  if (surrounding.includes('**')) {
-    const beforeCursor = value.slice(Math.max(0, selectionStart - 100), selectionStart)
-    const afterCursor = value.slice(selectionEnd, Math.min(value.length, selectionEnd + 100))
-    const lastOpenBold = beforeCursor.lastIndexOf('**')
-    const nextCloseBold = afterCursor.indexOf('**')
-    if (lastOpenBold !== -1 && nextCloseBold !== -1) {
-      formats.push('bold')
-    }
+  const beforeCursor = value.slice(Math.max(0, selectionStart - 100), selectionStart)
+  const afterCursor = value.slice(selectionEnd, Math.min(value.length, selectionEnd + 100))
+  if (['**', '__'].some(marker => surrounding.includes(marker) &&
+      beforeCursor.lastIndexOf(marker) !== -1 && afterCursor.indexOf(marker) !== -1)) {
+    formats.push('bold')
   }
   
-  // Check for italic
-  if (surrounding.includes('_')) {
-    const beforeCursor = value.slice(Math.max(0, selectionStart - 100), selectionStart)
-    const afterCursor = value.slice(selectionEnd, Math.min(value.length, selectionEnd + 100))
-    const lastOpenItalic = beforeCursor.lastIndexOf('_')
-    const nextCloseItalic = afterCursor.indexOf('_')
-    if (lastOpenItalic !== -1 && nextCloseItalic !== -1) {
-      formats.push('italic')
-    }
+  // Check for italic: a single _ or * on each side, not part of __ or **
+  const singleMarker = ch => {
+    const c = ch === '*' ? '\\*' : ch
+    return new RegExp(`(^|[^${c}])${c}[^${c}]*$`).test(beforeCursor) &&
+      new RegExp(`^[^${c}]*${c}(?!${c})`).test(afterCursor)
+  }
+  if ((surrounding.includes('_') && singleMarker('_')) || (surrounding.includes('*') && singleMarker('*'))) {
+    formats.push('italic')
   }
   
   // Check for code

@@ -10,18 +10,21 @@ import { blockStyle, multilineStyle } from './operations/block.js'
 import { applyListStyle } from './operations/list.js'
 import { getActiveFormats as getActive, hasFormat as has, expandSelection as expand } from './core/detection.js'
 import { debugLog, debugSelection, debugResult, setDebugMode, getDebugMode } from './debug.js'
+import { inlineStyle } from './operations/inline.js'
+import { resolveMarker, detectMarkers } from './core/markers.js'
 
 /**
  * Toggle bold formatting
+ * @param {Object} [options]
+ * @param {string} [options.marker] - '**' (default) or '__'
  */
-export function toggleBold(textarea) {
+export function toggleBold(textarea, options = {}) {
   if (!textarea || textarea.disabled || textarea.readOnly) return
   
   debugLog('toggleBold', 'Starting');
   debugSelection(textarea, 'Before');
   
-  const style = mergeWithDefaults(FORMATS.bold)
-  const result = blockStyle(textarea, style)
+  const result = inlineStyle(textarea, 'bold', resolveMarker('bold', options.marker))
   
   debugResult(result);
   
@@ -32,11 +35,12 @@ export function toggleBold(textarea) {
 
 /**
  * Toggle italic formatting
+ * @param {Object} [options]
+ * @param {string} [options.marker] - '_' (default) or '*'
  */
-export function toggleItalic(textarea) {
+export function toggleItalic(textarea, options = {}) {
   if (!textarea || textarea.disabled || textarea.readOnly) return
-  const style = mergeWithDefaults(FORMATS.italic)
-  const result = blockStyle(textarea, style)
+  const result = inlineStyle(textarea, 'italic', resolveMarker('italic', options.marker))
   insertText(textarea, result)
 }
 
@@ -90,10 +94,13 @@ export function insertLink(textarea, options = {}) {
 
 /**
  * Toggle bullet list formatting
+ * @param {Object} [options]
+ * @param {string} [options.marker] - '-' (default), '*' or '+'
  */
-export function toggleBulletList(textarea) {
+export function toggleBulletList(textarea, options = {}) {
   if (!textarea || textarea.disabled || textarea.readOnly) return
   const style = mergeWithDefaults(FORMATS.bulletList)
+  style.bulletMarker = resolveMarker('bullet', options.marker)
   applyListStyle(textarea, style)
 }
 
@@ -347,6 +354,11 @@ export function applyCustomFormat(textarea, format) {
 export { preserveSelection }
 
 /**
+ * Standard spellings per format, and the ones a document already uses
+ */
+export { detectMarkers }
+
+/**
  * Configure undo method
  */
 export { setUndoMethod }
@@ -376,6 +388,7 @@ export default {
   hasFormat,
   expandSelection,
   applyCustomFormat,
+  detectMarkers,
   preserveSelection,
   setUndoMethod,
   setDebugMode,

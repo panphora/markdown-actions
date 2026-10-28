@@ -71,6 +71,9 @@ hasFormat(textarea, 'bold') // Returns: true/false
 // Expand selection to word or line boundaries
 expandSelection(textarea, { toWord: true })
 
+// Find the spelling a document already uses (null when it uses none)
+detectMarkers('Hi *there*\n\n+ one') // Returns: { italic: '*', bold: null, bullet: '+' }
+
 // Apply custom markdown format
 applyCustomFormat(textarea, {
   prefix: '==',
@@ -82,6 +85,11 @@ applyCustomFormat(textarea, {
 ### Options
 
 ```javascript
+// Choose the spelling. Toggling off removes either spelling.
+toggleItalic(textarea, { marker: '*' })      // '_' (default) or '*'
+toggleBold(textarea, { marker: '__' })       // '**' (default) or '__'
+toggleBulletList(textarea, { marker: '*' })  // '-' (default), '*' or '+'
+
 // Link options
 insertLink(textarea, {
   url: 'https://example.com',  // Pre-fill URL
@@ -294,7 +302,7 @@ This careful selection management creates a professional editing experience:
 
 ## 🧪 Testing
 
-Open `test.html` in a browser to run the comprehensive test suite with 38 test cases covering:
+Run `npm test` for the Node tests (spellings, toggling, active formats). Open `test.html` in a browser to run the comprehensive test suite with 38 test cases covering:
 
 - All formatting functions
 - Edge cases and boundary conditions
