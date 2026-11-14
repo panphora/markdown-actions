@@ -2,7 +2,7 @@
  * List operations for bullet and numbered lists
  */
 
-import { expandSelectionToLine, newlinesToSurroundSelectedText, applyLineOperation } from '../core/selection.js'
+import { expandSelectionToLine, applyLineOperation } from '../core/selection.js'
 import { insertText } from '../core/insertion.js'
 
 /**
@@ -113,23 +113,17 @@ export function listStyle(textarea, style) {
     return { text: pristineText, selectionStart, selectionEnd }
   }
 
-  // Apply new list formatting
-  const { newlinesToAppend, newlinesToPrepend } = newlinesToSurroundSelectedText(textarea)
-  const text = newlinesToAppend + prefixedLines.join('\n') + newlinesToPrepend
+  const text = prefixedLines.join('\n')
 
   if (noInitialSelection) {
-    selectionStart = Math.max(selectionStart + makePrefix(0, style.unorderedList).length + newlinesToAppend.length, 0)
+    selectionStart = Math.max(selectionStart + makePrefix(0, style.unorderedList).length, 0)
     selectionEnd = selectionStart
+  } else if (undoResultOppositeList.processed) {
+    selectionStart = Math.max(textarea.selectionStart, 0)
+    selectionEnd = textarea.selectionEnd + totalPrefixLength - totalPrefixLengthOppositeList
   } else {
-    if (undoResultOppositeList.processed) {
-      // Converting from one list type to another
-      selectionStart = Math.max(textarea.selectionStart + newlinesToAppend.length, 0)
-      selectionEnd = textarea.selectionEnd + newlinesToAppend.length + totalPrefixLength - totalPrefixLengthOppositeList
-    } else {
-      // Adding list formatting to plain text
-      selectionStart = Math.max(textarea.selectionStart + newlinesToAppend.length, 0)
-      selectionEnd = textarea.selectionEnd + newlinesToAppend.length + totalPrefixLength
-    }
+    selectionStart = Math.max(textarea.selectionStart, 0)
+    selectionEnd = textarea.selectionEnd + totalPrefixLength
   }
 
   return { text, selectionStart, selectionEnd }

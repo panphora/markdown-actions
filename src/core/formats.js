@@ -42,8 +42,7 @@ export const FORMATS = {
   },
   taskList: {
     prefix: '- [ ] ',
-    multiline: true,
-    surroundWithNewlines: true
+    multiline: true
   },
   header1: { prefix: '# ' },
   header2: { prefix: '## ' },

@@ -198,6 +198,28 @@ export function applyLineOperation(textarea, operation, options = {}) {
       }
     }
   }
-  
+
+  if (!noInitialSelection) {
+    const oldLines = textarea.value.slice(textarea.selectionStart, textarea.selectionEnd).split('\n')
+    const newLines = result.text.split('\n')
+    if (oldLines.length === newLines.length) {
+      const blockStart = textarea.selectionStart
+      const shiftPosition = (position) => {
+        let oldStart = blockStart
+        let newStart = blockStart
+        for (let i = 0; i < oldLines.length; i++) {
+          if (position <= oldStart + oldLines[i].length) {
+            return newStart + Math.max(0, position - oldStart + newLines[i].length - oldLines[i].length)
+          }
+          oldStart += oldLines[i].length + 1
+          newStart += newLines[i].length + 1
+        }
+        return position
+      }
+      result.selectionStart = originalStart === blockStart ? blockStart : shiftPosition(originalStart)
+      result.selectionEnd = shiftPosition(originalEnd)
+    }
+  }
+
   return result
 }
