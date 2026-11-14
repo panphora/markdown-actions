@@ -51,12 +51,14 @@ All functions take a `HTMLTextAreaElement` as their first parameter:
 ```javascript
 toggleBold(textarea)           // **text**
 toggleItalic(textarea)         // _text_
+toggleStrikethrough(textarea)  // ~~text~~
 toggleCode(textarea)           // `code` or ```block```
 toggleQuote(textarea)          // > quote
 toggleBulletList(textarea)     // - item
 toggleNumberedList(textarea)   // 1. item
 insertLink(textarea, options)  // [text](url)
 insertHeader(textarea, level)  // # Header
+toggleH1(textarea)             // # Header, with toggleH2 to toggleH6 for the other levels
 ```
 
 ### Utility Functions
