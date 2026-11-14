@@ -18,6 +18,24 @@ function hasFormatApplied(text, format) {
 }
 
 /**
+ * Check if a range of a line sits between a matching pair of ~~ or ~
+ */
+function insideStrikethrough(line, start, end) {
+  return [2, 1].some(size => {
+    const openings = []
+    const tildes = /~+/g
+    let run
+    while ((run = tildes.exec(line))) {
+      if (run[0].length === size) openings.push(run.index)
+    }
+    for (let i = 0; i + 1 < openings.length; i += 2) {
+      if (openings[i] + size <= start && end <= openings[i + 1]) return true
+    }
+    return false
+  })
+}
+
+/**
  * Get active formats at cursor position
  */
 export function getActiveFormats(textarea) {
@@ -56,9 +74,10 @@ export function getActiveFormats(textarea) {
     formats.push('quote')
   }
   
-  if (currentLine.startsWith('# ')) formats.push('header')
-  if (currentLine.startsWith('## ')) formats.push('header-2')
-  if (currentLine.startsWith('### ')) formats.push('header-3')
+  const header = /^(#{1,6}) /.exec(currentLine)
+  if (header) {
+    formats.push(header[1].length === 1 ? 'header' : `header-${header[1].length}`)
+  }
   
   // Check inline formats by looking around cursor
   const lookBehind = Math.max(0, selectionStart - 10)
@@ -81,6 +100,11 @@ export function getActiveFormats(textarea) {
   }
   if ((surrounding.includes('_') && singleMarker('_')) || (surrounding.includes('*') && singleMarker('*'))) {
     formats.push('italic')
+  }
+  
+  // Check for strikethrough
+  if (insideStrikethrough(currentLine, selectionStart - lineStart, selectionEnd - lineStart)) {
+    formats.push('strikethrough')
   }
   
   // Check for code

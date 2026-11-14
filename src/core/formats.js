@@ -13,6 +13,11 @@ export const FORMATS = {
     suffix: '_',
     trimFirst: true
   },
+  strikethrough: {
+    prefix: '~~',
+    suffix: '~~',
+    trimFirst: true
+  },
   code: {
     prefix: '`',
     suffix: '`',
