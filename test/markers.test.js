@@ -1,30 +1,10 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { JSDOM } from 'jsdom'
+import { actions, run, active } from './helpers.js'
 
-const { window } = new JSDOM('<textarea></textarea>')
-globalThis.document = window.document
-globalThis.Event = window.Event
-globalThis.CustomEvent = window.CustomEvent
-const actions = await import('../src/index.js')
-
-function run(text, caret, fn, options) {
-  const textarea = window.document.querySelector('textarea')
-  const marked = text.indexOf('|')
-  const end = text.indexOf('|', marked + 1)
-  textarea.value = text.replace(/\|/g, '')
-  textarea.selectionStart = marked
-  textarea.selectionEnd = end === -1 ? marked : end - 1
-  fn(textarea, options)
-  const { value, selectionStart, selectionEnd } = textarea
-  return selectionStart === selectionEnd
-    ? value.slice(0, selectionStart) + '|' + value.slice(selectionStart)
-    : value.slice(0, selectionStart) + '|' + value.slice(selectionStart, selectionEnd) + '|' + value.slice(selectionEnd)
-}
-
-const italic = (text, marker) => run(text, null, actions.toggleItalic, marker && { marker })
-const bold = (text, marker) => run(text, null, actions.toggleBold, marker && { marker })
-const bullet = (text, marker) => run(text, null, actions.toggleBulletList, marker && { marker })
+const italic = (text, marker) => run(text, actions.toggleItalic, marker && { marker })
+const bold = (text, marker) => run(text, actions.toggleBold, marker && { marker })
+const bullet = (text, marker) => run(text, actions.toggleBulletList, marker && { marker })
 
 test('italic writes underscores by default and stars on request', () => {
   assert.equal(italic('That is the cu|test thing.'), 'That is the _cu|test_ thing.')
@@ -79,13 +59,6 @@ test('bullet lists write the chosen marker and remove any marker', () => {
 })
 
 test('active formats recognize every spelling', () => {
-  const active = text => {
-    const textarea = window.document.querySelector('textarea')
-    const at = text.indexOf('|')
-    textarea.value = text.replace('|', '')
-    textarea.selectionStart = textarea.selectionEnd = at
-    return actions.getActiveFormats(textarea)
-  }
   assert.ok(active('a *wo|rd* b').includes('italic'))
   assert.ok(active('a _wo|rd_ b').includes('italic'))
   assert.ok(!active('a **wo|rd** b').includes('italic'))

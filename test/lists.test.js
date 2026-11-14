@@ -1,26 +1,6 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { JSDOM } from 'jsdom'
-
-const { window } = new JSDOM('<textarea></textarea>')
-globalThis.document = window.document
-globalThis.Event = window.Event
-globalThis.CustomEvent = window.CustomEvent
-const actions = await import('../src/index.js')
-
-function run(text, fn) {
-  const textarea = window.document.querySelector('textarea')
-  const marked = text.indexOf('|')
-  const end = text.indexOf('|', marked + 1)
-  textarea.value = text.replace(/\|/g, '')
-  textarea.selectionStart = marked
-  textarea.selectionEnd = end === -1 ? marked : end - 1
-  fn(textarea)
-  const { value, selectionStart, selectionEnd } = textarea
-  return selectionStart === selectionEnd
-    ? value.slice(0, selectionStart) + '|' + value.slice(selectionStart)
-    : value.slice(0, selectionStart) + '|' + value.slice(selectionStart, selectionEnd) + '|' + value.slice(selectionEnd)
-}
+import { actions, run } from './helpers.js'
 
 const lists = [
   ['task', actions.toggleTaskList, '- [ ] '],
