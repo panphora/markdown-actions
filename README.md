@@ -362,6 +362,7 @@ The core text manipulation logic, selection handling algorithms, and the approac
 
 - **GitHub, Inc.** - Original implementation and algorithms
 - **markdown-toolbar-element contributors** - Ongoing improvements to the source implementation
+- **[Rias](https://github.com/riasvdv)** - Proposed H4 to H6 operations ([#1](https://github.com/panphora/markdown-actions/pull/1)) and strikethrough ([#2](https://github.com/panphora/markdown-actions/pull/2))
 
 ## 🔮 Future Plans
 
