@@ -52,10 +52,10 @@ test('a tilde that is plain text is not read as a marker', () => {
   assert.equal(italic('~/no|tes'), '_~/no|tes_')
 })
 
-test('tildes that do not make a strikethrough pair are left in place', () => {
-  assert.equal(strike('a ~~~wo|rd~~~ b'), 'a ~~~~~wo|rd~~~~~ b')
-  assert.equal(strike('a ~~~|word|~~~ b'), 'a ~~~~~|word|~~~~~ b')
-  assert.equal(strike('a ~~|word|~ b'), 'a ~~~~|word|~~~ b')
+test('tildes that do not make a strikethrough pair are left in place, and no markers are added beside them', () => {
+  assert.equal(strike('a ~~~wo|rd~~~ b'), 'a ~~~wo|rd~~~ b')
+  assert.equal(strike('a ~~~|word|~~~ b'), 'a ~~~|word|~~~ b')
+  assert.equal(strike('a ~~|word|~ b'), 'a ~~|word|~ b')
 })
 
 test('one toggle removes the inner pair when the same marker wraps a word twice', () => {
@@ -135,4 +135,15 @@ test('active formats do not report strikethrough outside a pair', () => {
 
 test('toggleStrikethrough is on the default export', () => {
   assert.equal(actions.default.toggleStrikethrough, actions.toggleStrikethrough)
+})
+
+test('strikethrough leaves text alone when its markers would touch a literal tilde', () => {
+  assert.equal(strike('about ~|5 items'), 'about ~|5 items')
+  assert.equal(strike('see ~/pa|th/to'), 'see ~/pa|th/to')
+  assert.equal(strike('wo|rd~~'), 'wo|rd~~')
+  assert.equal(strike('about |~5| items'), 'about |~5| items')
+})
+
+test('strikethrough still wraps a word next to a struck word', () => {
+  assert.equal(strike('~~old~~ ne|w'), '~~old~~ ~~ne|w~~')
 })

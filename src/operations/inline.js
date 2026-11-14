@@ -126,6 +126,10 @@ export function inlineStyle(textarea, kind, marker) {
 
   textarea.selectionStart = start
   textarea.selectionEnd = end
+  // New markers beside a literal tilde, as in "~5", would make a run of three that strikes nothing
+  if (marker[0] === '~' && [value[start - 1], value[start], value[end - 1], value[end]].includes('~')) {
+    return { text: value.slice(start, end), selectionStart: caretStart, selectionEnd: caretEnd }
+  }
   const caret = clamp(caretStart, start, end) + marker.length
   return {
     text: marker + value.slice(start, end) + marker,
